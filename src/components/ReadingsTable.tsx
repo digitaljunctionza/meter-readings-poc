@@ -141,9 +141,9 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
               <td className="px-3 py-2 text-right">
                 {r.usage !== null ? r.usage.toLocaleString() : "-"}
               </td>
-              <td className="px-3 py-2">
+              <td className="whitespace-nowrap px-3 py-2">
                 <span
-                  className={`rounded-full border-2 bg-white px-2 py-1 text-xs font-medium ${FLAG_CLASS[r.flag_status]}`}
+                  className={`whitespace-nowrap rounded-full border-2 bg-white px-2 py-1 text-xs font-medium ${FLAG_CLASS[r.flag_status]}`}
                 >
                   {FLAG_LABEL[r.flag_status]}
                 </span>
