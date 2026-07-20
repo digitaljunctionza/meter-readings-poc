@@ -5,14 +5,16 @@ import type { MeterReading, Service } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { unit_number, service, raw_value, photo_url, notes, property_id } = body as {
-    unit_number: string;
-    property_id: string;
-    service: Service;
-    raw_value: string;
-    photo_url: string | null;
-    notes: string | null;
-  };
+  const { unit_number, service, raw_value, photo_url, notes, property_id, captured_at } =
+    body as {
+      unit_number: string;
+      property_id: string;
+      service: Service;
+      raw_value: string;
+      photo_url: string | null;
+      notes: string | null;
+      captured_at?: string;
+    };
 
   if (!unit_number || !property_id || !service || !raw_value) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -51,11 +53,17 @@ export async function POST(req: NextRequest) {
     unit_id = newUnit.id as string;
   }
 
+  // Filtering to <= this row's timestamp keeps backfilled historical rows honest:
+  // "previous reading" must mean the reading before this one in time, not just
+  // whatever happens to be most recently inserted.
+  const cutoff = captured_at ?? new Date().toISOString();
+
   const { data: prevRows, error: prevError } = await supabase
     .from("meter_readings")
     .select("*")
     .eq("unit_id", unit_id)
     .eq("service", service)
+    .lte("captured_at", cutoff)
     .order("captured_at", { ascending: false })
     .limit(1);
 
@@ -80,6 +88,7 @@ export async function POST(req: NextRequest) {
     .select("*")
     .in("unit_id", unitIds.length > 0 ? unitIds : [unit_id])
     .eq("service", service)
+    .lte("captured_at", cutoff)
     .order("captured_at", { ascending: false })
     .limit(50);
 
@@ -104,6 +113,7 @@ export async function POST(req: NextRequest) {
       photo_url,
       notes,
       flag_status,
+      ...(captured_at ? { captured_at } : {}),
     })
     .select("*")
     .single();

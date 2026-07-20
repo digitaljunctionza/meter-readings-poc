@@ -1,11 +1,13 @@
 import type { FlagStatus, MeterReading, Service } from "@/lib/types";
 
-// A reading like "124937.26e" (OCR garble from a photo-read meter) parses as a
-// number but silently drops the trailing letter — catch that pattern explicitly.
-const PARTIAL_ENTRY_PATTERN = /[a-zA-Z]\s*$/;
+// A valid reading is just digits with an optional decimal point. Anything else
+// (a trailing OCR letter like "124937.26e", a stray extra token like "280891 0",
+// an embedded unit like "7192.133m3") parses as a number but silently drops or
+// mangles part of the value — reject the whole shape, not just known typos.
+const VALID_READING_PATTERN = /^\d+(\.\d+)?$/;
 
 export function looksLikePartialEntry(raw: string): boolean {
-  return PARTIAL_ENTRY_PATTERN.test(raw.trim());
+  return !VALID_READING_PATTERN.test(raw.trim());
 }
 
 export function computeFlagStatus(params: {
