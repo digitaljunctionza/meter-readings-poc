@@ -42,3 +42,6 @@ next-env.d.ts
 
 # design reference assets, not part of the app
 /UI Kit
+
+.vercel
+.env*

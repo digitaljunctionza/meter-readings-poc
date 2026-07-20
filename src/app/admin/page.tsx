@@ -24,12 +24,12 @@ export default async function AdminPage({
   const dateSuffix = from || to ? `&from=${from ?? ""}&to=${to ?? ""}` : "";
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 bg-white px-4 py-6">
-      <div className="no-print flex items-center gap-3 rounded-2xl bg-accent px-3 py-3">
+    <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 overflow-x-hidden bg-white px-4 py-6">
+      <div className="no-print flex min-w-0 items-center gap-3 rounded-2xl bg-accent px-3 py-3">
         <Link
           href="/"
           aria-label="Back to home"
-          className="flex h-8 w-8 items-center justify-center text-white"
+          className="flex h-8 w-8 shrink-0 items-center justify-center text-white"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
@@ -41,10 +41,12 @@ export default async function AdminPage({
             />
           </svg>
         </Link>
-        <h1 className="flex-1 text-sm font-bold text-white">Admin: meter readings</h1>
+        <h1 className="min-w-0 flex-1 truncate text-sm font-bold text-white">
+          Admin: meter readings
+        </h1>
         <Link
           href="/capture"
-          className="flex h-8 items-center justify-center rounded-full border-2 border-white px-4 text-sm font-medium text-white"
+          className="flex h-8 shrink-0 items-center justify-center rounded-full border-2 border-white px-4 text-sm font-medium text-white"
         >
           Capture
         </Link>
@@ -71,9 +73,9 @@ export default async function AdminPage({
       </div>
 
       {activeProperty && (
-        <p className="no-print text-sm text-gray-600">
-          Owner report link:{" "}
-          <span className="font-mono text-accent">
+        <p className="no-print flex min-w-0 flex-col gap-1 text-sm text-gray-600 sm:flex-row sm:gap-2">
+          <span className="shrink-0">Owner report link:</span>
+          <span className="min-w-0 break-all font-mono text-accent">
             /report/{activeProperty.owner_share_token}
           </span>
         </p>
