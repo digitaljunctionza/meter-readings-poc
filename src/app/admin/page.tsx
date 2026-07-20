@@ -73,12 +73,19 @@ export default async function AdminPage({
       </div>
 
       {activeProperty && (
-        <p className="no-print flex min-w-0 flex-col gap-1 text-sm text-gray-600 sm:flex-row sm:gap-2">
-          <span className="shrink-0">Owner report link:</span>
-          <span className="min-w-0 break-all font-mono text-accent">
-            /report/{activeProperty.owner_share_token}
-          </span>
-        </p>
+        <a
+          href={`https://wa.me/27725541634?text=${encodeURIComponent(
+            `Hi Wayne, I have a query about the meter readings for ${activeProperty.name}.`
+          )}`}
+          target="_blank"
+          rel="noreferrer"
+          className="no-print flex w-fit items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.5 1.34 5.02L2 22l5.13-1.35a9.96 9.96 0 0 0 4.91 1.29h.01c5.52 0 10-4.48 10-10s-4.48-10-10.01-10zm0 18.15a8.1 8.1 0 0 1-4.14-1.13l-.3-.18-3.05.8.81-2.97-.19-.3a8.13 8.13 0 0 1-1.25-4.37c0-4.5 3.66-8.15 8.15-8.15 4.5 0 8.15 3.66 8.15 8.15 0 4.5-3.66 8.15-8.15 8.15h-.03zm4.47-6.11c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.78.95-.14.16-.29.18-.53.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.11-.49.11-.11.24-.29.36-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.85.83-.85 2.03s.87 2.36.99 2.52c.12.16 1.71 2.61 4.14 3.66.58.25 1.03.4 1.38.51.58.19 1.11.16 1.53.1.47-.07 1.44-.59 1.64-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28z" />
+          </svg>
+          Message Wayne
+        </a>
       )}
 
       <ReportControls />

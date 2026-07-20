@@ -67,6 +67,7 @@ function SortIcon({ direction }: { direction: SortDir | null }) {
 export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const sortedRows = useMemo(() => {
     const copy = [...rows];
@@ -128,7 +129,13 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
         </thead>
         <tbody className="divide-y divide-accent-light">
           {sortedRows.map((r) => (
-            <tr key={r.id}>
+            <tr
+              key={r.id}
+              onClick={() => setSelectedId((current) => (current === r.id ? null : r.id))}
+              className={`cursor-pointer ${
+                selectedId === r.id ? "bg-accent-light" : "hover:bg-accent-light/40"
+              }`}
+            >
               <td className="whitespace-nowrap px-3 py-2">
                 {new Date(r.captured_at).toLocaleString()}
               </td>

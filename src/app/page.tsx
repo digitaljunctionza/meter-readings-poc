@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { ExitGuard } from "@/components/ExitGuard";
 
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-8 bg-white px-6 py-8 text-center">
+      <ExitGuard />
       <div className="w-full overflow-hidden rounded-2xl border-2 border-accent">
         <div className="bg-accent px-4 py-3 text-left text-sm font-bold text-white">
           Meter Readings
