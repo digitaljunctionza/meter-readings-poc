@@ -27,3 +27,20 @@ body {
     display: none !important;
   }
 }
+
+@keyframes splash-fade {
+  0%,
+  55% {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.splash-screen {
+  animation: splash-fade 900ms ease forwards;
+  animation-delay: 500ms;
+}
