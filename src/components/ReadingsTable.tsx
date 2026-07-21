@@ -68,9 +68,16 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [unitSearch, setUnitSearch] = useState("");
+
+  const filteredRows = useMemo(() => {
+    const query = unitSearch.trim().toLowerCase();
+    if (!query) return rows;
+    return rows.filter((r) => r.unit_number.toLowerCase().includes(query));
+  }, [rows, unitSearch]);
 
   const sortedRows = useMemo(() => {
-    const copy = [...rows];
+    const copy = [...filteredRows];
     copy.sort((a, b) => {
       const cmp =
         sortKey === "date"
@@ -79,7 +86,7 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return copy;
-  }, [rows, sortKey, sortDir]);
+  }, [filteredRows, sortKey, sortDir]);
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
@@ -95,84 +102,113 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border-2 border-accent-light">
-      <table className="min-w-full divide-y divide-accent-light text-sm">
-        <thead className="bg-accent-light">
-          <tr>
-            <th className="px-3 py-2 text-left font-bold text-accent">
-              <button
-                type="button"
-                onClick={() => handleSort("date")}
-                className="flex items-center gap-1"
-              >
-                Date
-                <SortIcon direction={sortKey === "date" ? sortDir : null} />
-              </button>
-            </th>
-            <th className="px-3 py-2 text-left font-bold text-accent">
-              <button
-                type="button"
-                onClick={() => handleSort("unit")}
-                className="flex items-center gap-1"
-              >
-                Unit
-                <SortIcon direction={sortKey === "unit" ? sortDir : null} />
-              </button>
-            </th>
-            <th className="px-3 py-2 text-left font-bold text-accent">Service</th>
-            <th className="px-3 py-2 text-right font-bold text-accent">Reading</th>
-            <th className="px-3 py-2 text-right font-bold text-accent">Previous</th>
-            <th className="px-3 py-2 text-right font-bold text-accent">Usage</th>
-            <th className="px-3 py-2 text-left font-bold text-accent">Status</th>
-            <th className="px-3 py-2 text-left font-bold text-accent">Photo</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-accent-light">
-          {sortedRows.map((r) => (
-            <tr
-              key={r.id}
-              onClick={() => setSelectedId((current) => (current === r.id ? null : r.id))}
-              className={`cursor-pointer ${
-                selectedId === r.id ? "bg-accent-light" : "hover:bg-accent-light/40"
-              }`}
+    <div className="flex flex-col gap-3">
+      <label className="no-print flex flex-col gap-1.5">
+        <span className="text-sm font-bold text-accent">Search by unit number</span>
+        <div className="relative">
+          <input
+            type="text"
+            value={unitSearch}
+            onChange={(e) => setUnitSearch(e.target.value)}
+            placeholder="e.g. 101"
+            className="w-full rounded-lg border-2 border-accent-light bg-white py-3 pl-4 pr-10 text-gray-900 outline-none placeholder:text-gray-400 focus:border-accent"
+          />
+          {unitSearch && (
+            <button
+              type="button"
+              onClick={() => setUnitSearch("")}
+              aria-label="Clear search"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
-              <td className="whitespace-nowrap px-3 py-2">
-                {new Date(r.captured_at).toLocaleString()}
-              </td>
-              <td className="px-3 py-2">{r.unit_number}</td>
-              <td className="px-3 py-2 capitalize">{r.service}</td>
-              <td className="px-3 py-2 text-right">{r.reading_value.toLocaleString()}</td>
-              <td className="px-3 py-2 text-right">
-                {r.previous_value !== null ? r.previous_value.toLocaleString() : "-"}
-              </td>
-              <td className="px-3 py-2 text-right">
-                {r.usage !== null ? r.usage.toLocaleString() : "-"}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2">
-                <span
-                  className={`whitespace-nowrap rounded-full border-2 bg-white px-2 py-1 text-xs font-medium ${FLAG_CLASS[r.flag_status]}`}
-                >
-                  {FLAG_LABEL[r.flag_status]}
-                </span>
-              </td>
-              <td className="px-3 py-2">
-                {r.photo_url ? (
-                  <a
-                    href={r.photo_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-accent underline"
+              ✕
+            </button>
+          )}
+        </div>
+      </label>
+
+      {sortedRows.length === 0 ? (
+        <p className="text-gray-500">No readings match unit &quot;{unitSearch}&quot;.</p>
+      ) : (
+        <div className="overflow-x-auto rounded-2xl border-2 border-accent-light">
+          <table className="min-w-full divide-y divide-accent-light text-sm">
+            <thead className="bg-accent-light">
+              <tr>
+                <th className="px-3 py-2 text-left font-bold text-accent">
+                  <button
+                    type="button"
+                    onClick={() => handleSort("date")}
+                    className="flex items-center gap-1"
                   >
-                    View
-                  </a>
-                ) : (
-                  "-"
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                    Date
+                    <SortIcon direction={sortKey === "date" ? sortDir : null} />
+                  </button>
+                </th>
+                <th className="px-3 py-2 text-left font-bold text-accent">
+                  <button
+                    type="button"
+                    onClick={() => handleSort("unit")}
+                    className="flex items-center gap-1"
+                  >
+                    Unit
+                    <SortIcon direction={sortKey === "unit" ? sortDir : null} />
+                  </button>
+                </th>
+                <th className="px-3 py-2 text-left font-bold text-accent">Service</th>
+                <th className="px-3 py-2 text-right font-bold text-accent">Reading</th>
+                <th className="px-3 py-2 text-right font-bold text-accent">Previous</th>
+                <th className="px-3 py-2 text-right font-bold text-accent">Usage</th>
+                <th className="px-3 py-2 text-left font-bold text-accent">Status</th>
+                <th className="px-3 py-2 text-left font-bold text-accent">Photo</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-accent-light">
+              {sortedRows.map((r) => (
+                <tr
+                  key={r.id}
+                  onClick={() => setSelectedId((current) => (current === r.id ? null : r.id))}
+                  className={`cursor-pointer ${
+                    selectedId === r.id ? "bg-accent-light" : "hover:bg-accent-light/40"
+                  }`}
+                >
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {new Date(r.captured_at).toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2">{r.unit_number}</td>
+                  <td className="px-3 py-2 capitalize">{r.service}</td>
+                  <td className="px-3 py-2 text-right">{r.reading_value.toLocaleString()}</td>
+                  <td className="px-3 py-2 text-right">
+                    {r.previous_value !== null ? r.previous_value.toLocaleString() : "-"}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {r.usage !== null ? r.usage.toLocaleString() : "-"}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <span
+                      className={`whitespace-nowrap rounded-full border-2 bg-white px-2 py-1 text-xs font-medium ${FLAG_CLASS[r.flag_status]}`}
+                    >
+                      {FLAG_LABEL[r.flag_status]}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">
+                    {r.photo_url ? (
+                      <a
+                        href={r.photo_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-accent underline"
+                      >
+                        View
+                      </a>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
