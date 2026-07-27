@@ -1,27 +1,62 @@
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/auth";
 import { buildReportRows } from "@/lib/report";
 import { ReadingsTable } from "@/components/ReadingsTable";
 import { ReportControls } from "@/components/ReportControls";
-import type { Property } from "@/lib/types";
+import { ReportDashboard } from "@/components/ReportDashboard";
+import { LogoutButton } from "@/components/LogoutButton";
+import { InviteManager } from "@/components/InviteManager";
+import type { Property, PropertyInvite, Service } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ property?: string; from?: string; to?: string }>;
+  searchParams: Promise<{
+    property?: string;
+    from?: string;
+    to?: string;
+    unit?: string;
+    service?: string;
+    searched?: string;
+  }>;
 }) {
-  const { property: selectedPropertyId, from, to } = await searchParams;
+  const profile = await getProfile();
+  if (!profile) redirect("/login?next=/admin");
+  if (profile.role !== "admin") redirect("/owner");
 
+  const { property: selectedPropertyId, from, to, unit, service, searched } = await searchParams;
+  const hasSearched = searched === "1";
+
+  const supabase = await createClient();
   const { data: propertyRows } = await supabase.from("properties").select("*").order("name");
   const properties = (propertyRows ?? []) as Property[];
 
   const activePropertyId = selectedPropertyId || properties[0]?.id;
-  const rows = activePropertyId ? await buildReportRows(activePropertyId, { from, to }) : [];
   const activeProperty = properties.find((p) => p.id === activePropertyId);
 
-  const dateSuffix = from || to ? `&from=${from ?? ""}&to=${to ?? ""}` : "";
+  const dashboardRows = activePropertyId ? await buildReportRows(activePropertyId) : [];
+  const rows =
+    activePropertyId && hasSearched
+      ? await buildReportRows(activePropertyId, {
+          from,
+          to,
+          unitNumber: unit,
+          service: service as Service | undefined,
+        })
+      : [];
+
+  const { data: inviteRows } = activePropertyId
+    ? await supabase
+        .from("property_invites")
+        .select("*")
+        .eq("property_id", activePropertyId)
+        .order("created_at", { ascending: false })
+    : { data: [] };
+  const invites = (inviteRows ?? []) as PropertyInvite[];
 
   return (
     <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 overflow-x-hidden bg-white px-4 py-6">
@@ -29,7 +64,7 @@ export default async function AdminPage({
         <Link
           href="/"
           aria-label="Back to home"
-          className="flex h-8 w-8 shrink-0 items-center justify-center text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-white"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path
@@ -46,10 +81,11 @@ export default async function AdminPage({
         </h1>
         <Link
           href="/capture"
-          className="flex h-8 shrink-0 items-center justify-center rounded-full border-2 border-white px-4 text-sm font-medium text-white"
+          className="flex h-10 shrink-0 items-center justify-center rounded-full border-2 border-white px-4 text-sm font-medium text-white"
         >
           Capture
         </Link>
+        <LogoutButton className="flex h-10 shrink-0 items-center justify-center rounded-full px-3 text-sm font-medium text-white/80" />
       </div>
 
       <h1 className="hidden text-lg font-bold text-accent print:block">
@@ -60,7 +96,7 @@ export default async function AdminPage({
         {properties.map((p) => (
           <Link
             key={p.id}
-            href={`/admin?property=${p.id}${dateSuffix}`}
+            href={`/admin?property=${p.id}`}
             className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium ${
               p.id === activePropertyId
                 ? "border-accent bg-accent text-white"
@@ -88,9 +124,13 @@ export default async function AdminPage({
         </a>
       )}
 
-      <ReportControls />
+      {activePropertyId && <InviteManager propertyId={activePropertyId} invites={invites} />}
 
-      <ReadingsTable rows={rows} />
+      <ReportDashboard rows={dashboardRows} />
+
+      <ReportControls hasResults={hasSearched && rows.length > 0} />
+
+      <ReadingsTable rows={rows} hasSearched={hasSearched} />
     </main>
   );
 }

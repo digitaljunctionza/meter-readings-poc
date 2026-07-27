@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth";
 import { computeFlagStatus } from "@/lib/flagging";
 import type { MeterReading, Service } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin();
+  } catch {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
+
+  const supabase = await createClient();
   const body = await req.json();
   const { unit_number, service, raw_value, photo_url, notes, property_id, captured_at } =
     body as {

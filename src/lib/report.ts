@@ -1,16 +1,20 @@
-import { supabase } from "@/lib/supabase";
-import type { MeterReading, Unit } from "@/lib/types";
+import { createClient } from "@/lib/supabase/server";
+import type { MeterReading, Service, Unit } from "@/lib/types";
 import type { ReadingRow } from "@/components/ReadingsTable";
 
-export interface DateRange {
+export interface ReportFilters {
   from?: string; // yyyy-mm-dd, inclusive
   to?: string; // yyyy-mm-dd, inclusive
+  unitNumber?: string; // partial, case-insensitive
+  service?: Service;
 }
 
 export async function buildReportRows(
   propertyId: string,
-  dateRange?: DateRange
+  filters?: ReportFilters
 ): Promise<ReadingRow[]> {
+  const supabase = await createClient();
+
   const { data: unitRows } = await supabase
     .from("units")
     .select("*")
@@ -31,6 +35,8 @@ export async function buildReportRows(
   const readings = (readingRows ?? []) as MeterReading[];
 
   // Track the most recent reading seen per unit+service to compute usage deltas.
+  // This runs over the FULL unfiltered history so "previous"/"usage" stay accurate
+  // even when the caller only wants to display a narrower slice.
   const lastSeen = new Map<string, number>();
   const rows: ReadingRow[] = readings.map((r) => {
     const key = `${r.unit_id}:${r.service}`;
@@ -50,14 +56,16 @@ export async function buildReportRows(
     };
   });
 
-  const filtered = dateRange
-    ? rows.filter((r) => {
-        const capturedDate = r.captured_at.slice(0, 10);
-        if (dateRange.from && capturedDate < dateRange.from) return false;
-        if (dateRange.to && capturedDate > dateRange.to) return false;
-        return true;
-      })
-    : rows;
+  const unitQuery = filters?.unitNumber?.trim().toLowerCase();
+
+  const filtered = rows.filter((r) => {
+    const capturedDate = r.captured_at.slice(0, 10);
+    if (filters?.from && capturedDate < filters.from) return false;
+    if (filters?.to && capturedDate > filters.to) return false;
+    if (filters?.service && r.service !== filters.service) return false;
+    if (unitQuery && !r.unit_number.toLowerCase().includes(unitQuery)) return false;
+    return true;
+  });
 
   return filtered.reverse();
 }

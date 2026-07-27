@@ -2,11 +2,12 @@ export type Service = "electricity" | "water";
 
 export type FlagStatus = "ok" | "below_prev" | "above_2x_avg" | "possible_partial";
 
+export type Role = "admin" | "owner";
+
 export interface Property {
   id: string;
   name: string;
   address: string | null;
-  owner_share_token: string;
   created_at: string;
 }
 
@@ -26,5 +27,27 @@ export interface MeterReading {
   captured_at: string;
   notes: string | null;
   flag_status: FlagStatus;
+  created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  role: Role;
+  full_name: string | null;
+  created_at: string;
+}
+
+export type InviteStatus = "pending" | "used" | "revoked";
+
+export interface PropertyInvite {
+  id: string;
+  token: string;
+  property_id: string;
+  created_by: string;
+  email: string | null;
+  status: InviteStatus;
+  used_by: string | null;
+  used_at: string | null;
+  expires_at: string;
   created_at: string;
 }
