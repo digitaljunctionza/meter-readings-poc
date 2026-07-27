@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { formatDateTime } from "@/lib/date";
 import type { FlagStatus } from "@/lib/types";
 
 export interface ReadingRow {
@@ -151,7 +152,7 @@ export function ReadingsTable({
               }`}
             >
               <td className="whitespace-nowrap px-3 py-2">
-                {new Date(r.captured_at).toLocaleString()}
+                {formatDateTime(r.captured_at)}
               </td>
               <td className="px-3 py-2">{r.unit_number}</td>
               <td className="px-3 py-2 capitalize">{r.service}</td>

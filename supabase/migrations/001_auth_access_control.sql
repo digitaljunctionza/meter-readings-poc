@@ -144,6 +144,13 @@ drop policy if exists "self update profile" on profiles;
 create policy "self update profile" on profiles
   for update using (id = auth.uid()) with check (id = auth.uid());
 
+-- RLS row-filters don't restrict which COLUMNS a client can change, so without
+-- this, any logged-in user could PATCH their own row's `role` to 'admin' via a
+-- raw API call even though the app UI never exposes that. Column-level grants
+-- are enforced independently of RLS by PostgREST, closing that gap.
+revoke update on profiles from authenticated;
+grant update (full_name) on profiles to authenticated;
+
 -- ============ RLS: property_access ============
 
 drop policy if exists "self or admin read property_access" on property_access;

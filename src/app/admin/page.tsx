@@ -8,6 +8,7 @@ import { ReportControls } from "@/components/ReportControls";
 import { ReportDashboard } from "@/components/ReportDashboard";
 import { LogoutButton } from "@/components/LogoutButton";
 import { InviteManager } from "@/components/InviteManager";
+import { AddPropertyForm } from "@/components/AddPropertyForm";
 import type { Property, PropertyInvite, Service } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -107,6 +108,8 @@ export default async function AdminPage({
           </Link>
         ))}
       </div>
+
+      <AddPropertyForm />
 
       {activeProperty && (
         <a

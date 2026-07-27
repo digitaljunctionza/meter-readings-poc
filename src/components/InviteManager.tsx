@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createInvite, revokeInvite } from "@/app/admin/invites/actions";
+import { formatDate } from "@/lib/date";
 import type { PropertyInvite } from "@/lib/types";
 
 const STATUS_LABEL: Record<PropertyInvite["status"], string> = {
@@ -90,7 +91,7 @@ export function InviteManager({
                     {STATUS_LABEL[invite.status]}
                   </span>
                   <span className="flex-1 truncate text-gray-500">
-                    {new Date(invite.created_at).toLocaleDateString()}
+                    {formatDate(invite.created_at)}
                   </span>
                   {invite.status === "pending" && (
                     <button
