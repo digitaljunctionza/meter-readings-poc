@@ -18,10 +18,10 @@ const STATUS_CLASS: Record<PropertyInvite["status"], string> = {
 };
 
 export function InviteManager({
-  propertyId,
+  clientId,
   invites,
 }: {
-  propertyId: string;
+  clientId: string;
   invites: PropertyInvite[];
 }) {
   const [open, setOpen] = useState(false);
@@ -33,7 +33,7 @@ export function InviteManager({
     setError(null);
     startTransition(async () => {
       try {
-        const token = await createInvite(propertyId);
+        const token = await createInvite(clientId);
         setGeneratedLink(`${window.location.origin}/invite/${token}`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to create invite");
@@ -54,7 +54,7 @@ export function InviteManager({
         onClick={() => setOpen((o) => !o)}
         className="flex w-fit items-center gap-2 rounded-full border-2 border-accent px-4 py-2 text-sm font-semibold text-accent"
       >
-        Invite owner
+        Invite client user
       </button>
 
       {open && (
@@ -70,7 +70,7 @@ export function InviteManager({
 
           {generatedLink && (
             <div className="rounded-lg border-2 border-green-200 bg-green-50 px-3 py-2 text-sm">
-              <p className="font-medium text-green-800">Share this link with the owner:</p>
+              <p className="font-medium text-green-800">Share this link with the client:</p>
               <p className="mt-1 break-all font-mono text-accent">{generatedLink}</p>
             </div>
           )}

@@ -10,7 +10,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [preview, setPreview] = useState<{ property_name: string; valid: boolean } | null>(null);
+  const [preview, setPreview] = useState<{ client_name: string; valid: boolean } | null>(null);
   const [mode, setMode] = useState<"signup" | "signin">("signup");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -24,7 +24,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
       .rpc("get_invite_preview", { p_token: token })
       .then(({ data, error: rpcError }) => {
         if (rpcError || !data || data.length === 0) {
-          setPreview({ property_name: "", valid: false });
+          setPreview({ client_name: "", valid: false });
         } else {
           setPreview(data[0]);
         }
@@ -40,7 +40,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
         "This invite link is no longer valid. Please ask Wayne for a new one."
       );
     }
-    router.push("/owner");
+    router.push("/client");
     router.refresh();
   }
 
@@ -96,7 +96,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
       <div className="mb-6 text-center">
         <h1 className="text-xl font-bold text-accent">You&apos;ve been invited</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Create an account to view reports for <strong>{preview.property_name}</strong>.
+          Create an account to view reports for <strong>{preview.client_name}</strong>.
         </p>
       </div>
 

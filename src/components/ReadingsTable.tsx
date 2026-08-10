@@ -7,6 +7,9 @@ import type { FlagStatus } from "@/lib/types";
 export interface ReadingRow {
   id: string;
   captured_at: string;
+  meter_id: string;
+  meter_label: string;
+  /** Unit number for per-unit meters; the meter label for communal ones. */
   unit_number: string;
   service: string;
   reading_value: number;

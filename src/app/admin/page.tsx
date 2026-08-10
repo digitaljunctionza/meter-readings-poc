@@ -7,9 +7,8 @@ import { ReadingsTable } from "@/components/ReadingsTable";
 import { ReportControls } from "@/components/ReportControls";
 import { ReportDashboard } from "@/components/ReportDashboard";
 import { LogoutButton } from "@/components/LogoutButton";
-import { InviteManager } from "@/components/InviteManager";
-import { AddPropertyForm } from "@/components/AddPropertyForm";
-import type { Property, PropertyInvite, Service } from "@/lib/types";
+import { ComingSoon } from "@/components/ComingSoon";
+import type { Client, Property, Service } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +26,7 @@ export default async function AdminPage({
 }) {
   const profile = await getProfile();
   if (!profile) redirect("/login?next=/admin");
-  if (profile.role !== "admin") redirect("/owner");
+  if (profile.role !== "admin") redirect("/client");
 
   const { property: selectedPropertyId, from, to, unit, service, searched } = await searchParams;
   const hasSearched = searched === "1";
@@ -36,8 +35,13 @@ export default async function AdminPage({
   const { data: propertyRows } = await supabase.from("properties").select("*").order("name");
   const properties = (propertyRows ?? []) as Property[];
 
+  const { data: clientRows } = await supabase.from("clients").select("*").order("name");
+  const clients = (clientRows ?? []) as Client[];
+  const clientById = new Map(clients.map((c) => [c.id, c]));
+
   const activePropertyId = selectedPropertyId || properties[0]?.id;
   const activeProperty = properties.find((p) => p.id === activePropertyId);
+  const activeClient = activeProperty ? clientById.get(activeProperty.client_id) : undefined;
 
   const dashboardRows = activePropertyId ? await buildReportRows(activePropertyId) : [];
   const rows =
@@ -49,15 +53,6 @@ export default async function AdminPage({
           service: service as Service | undefined,
         })
       : [];
-
-  const { data: inviteRows } = activePropertyId
-    ? await supabase
-        .from("property_invites")
-        .select("*")
-        .eq("property_id", activePropertyId)
-        .order("created_at", { ascending: false })
-    : { data: [] };
-  const invites = (inviteRows ?? []) as PropertyInvite[];
 
   return (
     <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 overflow-x-hidden bg-white px-4 py-6">
@@ -81,6 +76,12 @@ export default async function AdminPage({
           Admin: meter readings
         </h1>
         <Link
+          href="/admin/clients"
+          className="flex h-10 shrink-0 items-center justify-center rounded-full border-2 border-white px-4 text-sm font-medium text-white"
+        >
+          Clients
+        </Link>
+        <Link
           href="/capture"
           className="flex h-10 shrink-0 items-center justify-center rounded-full border-2 border-white px-4 text-sm font-medium text-white"
         >
@@ -93,41 +94,56 @@ export default async function AdminPage({
         {activeProperty?.name} — meter readings
       </h1>
 
-      <div className="no-print flex flex-wrap gap-2">
-        {properties.map((p) => (
-          <Link
-            key={p.id}
-            href={`/admin?property=${p.id}`}
-            className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium ${
-              p.id === activePropertyId
-                ? "border-accent bg-accent text-white"
-                : "border-accent-light text-gray-700 hover:border-accent"
-            }`}
-          >
-            {p.name}
-          </Link>
-        ))}
-      </div>
-
-      <AddPropertyForm />
-
-      {activeProperty && (
-        <a
-          href={`https://wa.me/27725541634?text=${encodeURIComponent(
-            `Hi Wayne, I have a query about the meter readings for ${activeProperty.name}.`
-          )}`}
-          target="_blank"
-          rel="noreferrer"
-          className="no-print flex w-fit items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.5 1.34 5.02L2 22l5.13-1.35a9.96 9.96 0 0 0 4.91 1.29h.01c5.52 0 10-4.48 10-10s-4.48-10-10.01-10zm0 18.15a8.1 8.1 0 0 1-4.14-1.13l-.3-.18-3.05.8.81-2.97-.19-.3a8.13 8.13 0 0 1-1.25-4.37c0-4.5 3.66-8.15 8.15-8.15 4.5 0 8.15 3.66 8.15 8.15 0 4.5-3.66 8.15-8.15 8.15h-.03zm4.47-6.11c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.78.95-.14.16-.29.18-.53.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.11-.49.11-.11.24-.29.36-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.85.83-.85 2.03s.87 2.36.99 2.52c.12.16 1.71 2.61 4.14 3.66.58.25 1.03.4 1.38.51.58.19 1.11.16 1.53.1.47-.07 1.44-.59 1.64-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28z" />
-          </svg>
-          Message Wayne
-        </a>
+      {properties.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          No properties yet.{" "}
+          <Link href="/admin/clients" className="text-accent underline">
+            Add a client and property
+          </Link>{" "}
+          to get started.
+        </p>
+      ) : (
+        <div className="no-print flex flex-wrap gap-2">
+          {properties.map((p) => (
+            <Link
+              key={p.id}
+              href={`/admin?property=${p.id}`}
+              className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium ${
+                p.id === activePropertyId
+                  ? "border-accent bg-accent text-white"
+                  : "border-accent-light text-gray-700 hover:border-accent"
+              }`}
+            >
+              {p.name}
+            </Link>
+          ))}
+        </div>
       )}
 
-      {activePropertyId && <InviteManager propertyId={activePropertyId} invites={invites} />}
+      {activeClient && (
+        <p className="no-print text-sm text-gray-500">
+          Client: <span className="font-medium text-gray-700">{activeClient.name}</span>
+        </p>
+      )}
+
+      <div className="no-print flex flex-wrap items-center gap-3">
+        {activeProperty && (
+          <a
+            href={`https://wa.me/27725541634?text=${encodeURIComponent(
+              `Hi Wayne, I have a query about the meter readings for ${activeProperty.name}.`
+            )}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex w-fit items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.5 1.34 5.02L2 22l5.13-1.35a9.96 9.96 0 0 0 4.91 1.29h.01c5.52 0 10-4.48 10-10s-4.48-10-10.01-10zm0 18.15a8.1 8.1 0 0 1-4.14-1.13l-.3-.18-3.05.8.81-2.97-.19-.3a8.13 8.13 0 0 1-1.25-4.37c0-4.5 3.66-8.15 8.15-8.15 4.5 0 8.15 3.66 8.15 8.15 0 4.5-3.66 8.15-8.15 8.15h-.03zm4.47-6.11c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.78.95-.14.16-.29.18-.53.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.11-.49.11-.11.24-.29.36-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.85.83-.85 2.03s.87 2.36.99 2.52c.12.16 1.71 2.61 4.14 3.66.58.25 1.03.4 1.38.51.58.19 1.11.16 1.53.1.47-.07 1.44-.59 1.64-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28z" />
+            </svg>
+            Message Wayne
+          </a>
+        )}
+        <ComingSoon label="Cost & tariffs" />
+      </div>
 
       <ReportDashboard rows={dashboardRows} />
 

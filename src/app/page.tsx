@@ -45,9 +45,9 @@ export default async function Home() {
           </>
         )}
 
-        {profile?.role === "owner" && (
+        {profile?.role === "client" && (
           <Link
-            href="/owner"
+            href="/client"
             className="rounded-full bg-accent px-4 py-4 text-base font-semibold text-white"
           >
             View my property

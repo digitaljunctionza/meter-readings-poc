@@ -1,16 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 import { LogoutButton } from "@/components/LogoutButton";
-import type { Property, Service } from "@/lib/types";
+import { formatDateTime } from "@/lib/date";
+import type { Client, Meter, Property } from "@/lib/types";
+
+interface PreviousReading {
+  reading_value: number;
+  captured_at: string;
+}
 
 export default function CapturePage() {
+  const [clients, setClients] = useState<Client[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [meters, setMeters] = useState<Meter[]>([]);
+
+  const [clientId, setClientId] = useState("");
   const [propertyId, setPropertyId] = useState("");
-  const [unitNumber, setUnitNumber] = useState("");
-  const [service, setService] = useState<Service>("electricity");
+  const [meterId, setMeterId] = useState("");
+
+  const [previous, setPrevious] = useState<PreviousReading | null>(null);
+  const [previousLoading, setPreviousLoading] = useState(false);
+
   const [rawValue, setRawValue] = useState("");
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
@@ -20,18 +33,75 @@ export default function CapturePage() {
   useEffect(() => {
     const supabase = createClient();
     supabase
-      .from("properties")
+      .from("clients")
       .select("*")
       .order("name")
+      .then(({ data }) => setClients((data as Client[]) ?? []));
+  }, []);
+
+  useEffect(() => {
+    setPropertyId("");
+    setProperties([]);
+    if (!clientId) return;
+    const supabase = createClient();
+    supabase
+      .from("properties")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("name")
       .then(({ data }) => setProperties((data as Property[]) ?? []));
+  }, [clientId]);
+
+  useEffect(() => {
+    setMeterId("");
+    setMeters([]);
+    if (!propertyId) return;
+    const supabase = createClient();
+    supabase
+      .from("meters")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("label")
+      .then(({ data }) => setMeters((data as Meter[]) ?? []));
+  }, [propertyId]);
+
+  // Show the last reading for this meter so Wayne can sanity-check before saving.
+  useEffect(() => {
+    setPrevious(null);
+    if (!meterId) return;
+    setPreviousLoading(true);
+    const supabase = createClient();
+    supabase
+      .from("meter_readings")
+      .select("reading_value, captured_at")
+      .eq("meter_id", meterId)
+      .order("captured_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        setPrevious((data?.[0] as PreviousReading | undefined) ?? null);
+        setPreviousLoading(false);
+      });
+  }, [meterId]);
+
+  const selectedMeter = meters.find((m) => m.id === meterId);
+
+  const resetAfterSubmit = useCallback(() => {
+    setRawValue("");
+    setNotes("");
+    setPhoto(null);
+    const photoInput = document.getElementById("photo-input") as HTMLInputElement | null;
+    if (photoInput) photoInput.value = "";
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setResult(null);
 
-    if (!propertyId || !unitNumber || !rawValue || !photo) {
-      setResult({ ok: false, message: "Please fill in every field and attach a photo." });
+    if (!meterId || !rawValue || !photo) {
+      setResult({
+        ok: false,
+        message: "Please pick a meter, enter a reading, and attach a photo.",
+      });
       return;
     }
 
@@ -39,7 +109,7 @@ export default function CapturePage() {
     try {
       const supabase = createClient();
       const ext = photo.name.split(".").pop() || "jpg";
-      const path = `${propertyId}/${unitNumber}-${service}-${Date.now()}.${ext}`;
+      const path = `${propertyId}/${meterId}-${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("meter-photos")
         .upload(path, photo);
@@ -54,9 +124,7 @@ export default function CapturePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          unit_number: unitNumber,
-          property_id: propertyId,
-          service,
+          meter_id: meterId,
           raw_value: rawValue,
           photo_url: publicUrlData.publicUrl,
           notes: notes || null,
@@ -76,12 +144,12 @@ export default function CapturePage() {
             ? "Reading saved."
             : `Reading saved, but flagged: ${flag.replace(/_/g, " ")}.`,
       });
-      setUnitNumber("");
-      setRawValue("");
-      setNotes("");
-      setPhoto(null);
-      const photoInput = document.getElementById("photo-input") as HTMLInputElement | null;
-      if (photoInput) photoInput.value = "";
+      resetAfterSubmit();
+      // What we just saved is now the previous reading for this meter.
+      setPrevious({
+        reading_value: json.reading.reading_value,
+        captured_at: json.reading.captured_at,
+      });
     } catch (err) {
       setResult({ ok: false, message: err instanceof Error ? err.message : "Unknown error" });
     } finally {
@@ -116,14 +184,32 @@ export default function CapturePage() {
         className="flex flex-col gap-4 rounded-b-2xl border-2 border-t-0 border-accent-light px-4 py-5"
       >
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-bold text-accent">Property</span>
+          <span className="text-sm font-bold text-accent">Client</span>
           <select
             className="w-full appearance-none rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-accent"
-            value={propertyId}
-            onChange={(e) => setPropertyId(e.target.value)}
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
             required
           >
-            <option value="">Select provider</option>
+            <option value="">Select a client</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-bold text-accent">Property</span>
+          <select
+            className="w-full appearance-none rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-accent disabled:bg-gray-50 disabled:text-gray-400"
+            value={propertyId}
+            onChange={(e) => setPropertyId(e.target.value)}
+            disabled={!clientId}
+            required
+          >
+            <option value="">Select a property</option>
             {properties.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -133,34 +219,52 @@ export default function CapturePage() {
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-bold text-accent">Unit number</span>
-          <input
-            type="text"
-            className="w-full rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none placeholder:text-gray-400 focus:border-accent"
-            value={unitNumber}
-            onChange={(e) => setUnitNumber(e.target.value)}
-            placeholder="Enter unit number"
+          <span className="text-sm font-bold text-accent">Meter</span>
+          <select
+            className="w-full appearance-none rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-accent disabled:bg-gray-50 disabled:text-gray-400"
+            value={meterId}
+            onChange={(e) => setMeterId(e.target.value)}
+            disabled={!propertyId}
             required
-          />
+          >
+            <option value="">Select a meter</option>
+            {meters.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+          {propertyId && meters.length === 0 && (
+            <span className="text-xs text-gray-500">
+              This property has no meters yet.{" "}
+              <Link href="/admin/clients" className="text-accent underline">
+                Add one
+              </Link>
+              .
+            </span>
+          )}
         </label>
 
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-bold text-accent">Service</span>
-          <div className="flex gap-2 rounded-lg border-2 border-accent-light p-1">
-            {(["electricity", "water"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setService(s)}
-                className={`flex-1 rounded-md py-2.5 text-sm font-medium capitalize transition-colors ${
-                  service === s ? "bg-accent text-white" : "text-gray-600 hover:bg-accent-light"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
+        {selectedMeter && (
+          <div className="rounded-lg border-2 border-accent-light bg-accent-light/40 px-4 py-3 text-sm">
+            {selectedMeter.location_note && (
+              <p className="mb-1 text-gray-600">{selectedMeter.location_note}</p>
+            )}
+            {previousLoading ? (
+              <p className="text-gray-500">Checking previous reading...</p>
+            ) : previous ? (
+              <p className="text-gray-700">
+                Previous:{" "}
+                <span className="font-bold text-accent">
+                  {previous.reading_value.toLocaleString()}
+                </span>{" "}
+                <span className="text-gray-500">on {formatDateTime(previous.captured_at)}</span>
+              </p>
+            ) : (
+              <p className="text-gray-500">No previous reading - this will be the first.</p>
+            )}
           </div>
-        </div>
+        )}
 
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-bold text-accent">Reading value</span>
@@ -173,6 +277,11 @@ export default function CapturePage() {
             placeholder="e.g. 1208222.5"
             required
           />
+          {previous && rawValue && Number(rawValue) < previous.reading_value && (
+            <span className="text-xs font-medium text-red-600">
+              Lower than the previous reading - check before saving.
+            </span>
+          )}
         </label>
 
         <label className="flex flex-col gap-1.5">

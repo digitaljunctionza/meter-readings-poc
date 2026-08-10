@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const ADMIN_ONLY_PATHS = ["/admin", "/capture"];
-const OWNER_ONLY_PATHS = ["/owner"];
+const CLIENT_ONLY_PATHS = ["/client"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -35,27 +35,27 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isAdminPath = ADMIN_ONLY_PATHS.some((p) => pathname.startsWith(p));
-  const isOwnerPath = OWNER_ONLY_PATHS.some((p) => pathname.startsWith(p));
+  const isClientPath = CLIENT_ONLY_PATHS.some((p) => pathname.startsWith(p));
 
-  if (!user && (isAdminPath || isOwnerPath)) {
+  if (!user && (isAdminPath || isClientPath)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && (isAdminPath || isOwnerPath)) {
+  if (user && (isAdminPath || isClientPath)) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    const role = profile?.role ?? "owner";
+    const role = profile?.role ?? "client";
 
     if (isAdminPath && role !== "admin") {
-      return NextResponse.redirect(new URL("/owner", request.url));
+      return NextResponse.redirect(new URL("/client", request.url));
     }
-    if (isOwnerPath && role === "admin") {
+    if (isClientPath && role === "admin") {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
   }

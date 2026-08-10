@@ -2,13 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createProperty } from "@/app/admin/clients/actions";
+import { createClientRecord } from "@/app/admin/clients/actions";
 
-export function AddPropertyForm({ clientId }: { clientId: string }) {
+export function AddClientForm() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -17,13 +17,14 @@ export function AddPropertyForm({ clientId }: { clientId: string }) {
     setError(null);
     startTransition(async () => {
       try {
-        await createProperty(clientId, name, address || null);
+        const id = await createClientRecord(name, email || null);
         setName("");
-        setAddress("");
+        setEmail("");
         setOpen(false);
+        router.push(`/admin/clients?client=${id}`);
         router.refresh();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to add property");
+        setError(err instanceof Error ? err.message : "Failed to add client");
       }
     });
   }
@@ -33,9 +34,9 @@ export function AddPropertyForm({ clientId }: { clientId: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 w-fit items-center gap-1 rounded-full border-2 border-accent-light px-4 text-sm font-medium text-gray-700 hover:border-accent"
+        className="flex h-10 w-fit items-center gap-1 rounded-full bg-accent px-4 text-sm font-semibold text-white"
       >
-        + Add property
+        + Add client
       </button>
     );
   }
@@ -46,22 +47,22 @@ export function AddPropertyForm({ clientId }: { clientId: string }) {
       className="flex flex-col gap-3 rounded-lg border-2 border-accent-light p-3"
     >
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold text-accent">Property name</span>
+        <span className="text-xs font-bold text-accent">Client name</span>
         <input
           type="text"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Tarragon Two"
+          placeholder="e.g. Tarragon Two Body Corporate"
           className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </label>
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold text-accent">Address (optional)</span>
+        <span className="text-xs font-bold text-accent">Contact email (optional)</span>
         <input
-          type="text"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
         />
       </label>
@@ -71,7 +72,7 @@ export function AddPropertyForm({ clientId }: { clientId: string }) {
           disabled={isPending}
           className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {isPending ? "Adding..." : "Add property"}
+          {isPending ? "Adding..." : "Add client"}
         </button>
         <button
           type="button"

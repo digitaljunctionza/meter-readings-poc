@@ -30,10 +30,10 @@ function LoginForm() {
       .eq("id", user.id)
       .single();
 
-    const role = profile?.role ?? "owner";
+    const role = profile?.role ?? "client";
     const isAllowedNext =
-      !!next && (role === "admin" ? next.startsWith("/admin") || next.startsWith("/capture") : next.startsWith("/owner"));
-    const destination = isAllowedNext ? next! : role === "admin" ? "/admin" : "/owner";
+      !!next && (role === "admin" ? next.startsWith("/admin") || next.startsWith("/capture") : next.startsWith("/client"));
+    const destination = isAllowedNext ? next! : role === "admin" ? "/admin" : "/client";
     router.push(destination);
     router.refresh();
   }

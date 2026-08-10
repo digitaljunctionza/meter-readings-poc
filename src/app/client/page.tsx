@@ -7,11 +7,12 @@ import { ReadingsTable } from "@/components/ReadingsTable";
 import { ReportControls } from "@/components/ReportControls";
 import { ReportDashboard } from "@/components/ReportDashboard";
 import { LogoutButton } from "@/components/LogoutButton";
+import { ComingSoon } from "@/components/ComingSoon";
 import type { Property, Service } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function OwnerPage({
+export default async function ClientPage({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -24,12 +25,13 @@ export default async function OwnerPage({
   }>;
 }) {
   const profile = await getProfile();
-  if (!profile) redirect("/login?next=/owner");
+  if (!profile) redirect("/login?next=/client");
   if (profile.role === "admin") redirect("/admin");
 
   const { property: selectedPropertyId, from, to, unit, service, searched } = await searchParams;
   const hasSearched = searched === "1";
 
+  // RLS scopes this to the properties of the client(s) this user was granted.
   const supabase = await createClient();
   const { data: propertyRows } = await supabase.from("properties").select("*").order("name");
   const properties = (propertyRows ?? []) as Property[];
@@ -67,12 +69,16 @@ export default async function OwnerPage({
         <LogoutButton className="flex h-10 shrink-0 items-center rounded-full px-3 text-sm font-medium text-white/80" />
       </div>
 
+      <h1 className="hidden text-lg font-bold text-accent print:block">
+        {activeProperty?.name} — meter readings
+      </h1>
+
       {properties.length > 1 && (
         <div className="no-print flex flex-wrap gap-2">
           {properties.map((p) => (
             <Link
               key={p.id}
-              href={`/owner?property=${p.id}`}
+              href={`/client?property=${p.id}`}
               className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium ${
                 p.id === activePropertyId
                   ? "border-accent bg-accent text-white"
@@ -85,7 +91,10 @@ export default async function OwnerPage({
         </div>
       )}
 
-      <p className="text-sm text-gray-600">Meter reading history and consumption report.</p>
+      <div className="no-print flex flex-wrap items-center gap-3">
+        <p className="text-sm text-gray-600">Meter reading history and consumption report.</p>
+        <ComingSoon label="Cost & tariffs" />
+      </div>
 
       <ReportDashboard rows={dashboardRows} />
 
