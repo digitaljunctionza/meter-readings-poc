@@ -11,6 +11,10 @@ import { BottomNav } from "@/components/BottomNav";
 import type { Client, Meter, Property, PropertyInvite, Unit } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+// Edge runtime avoids the Cloudflare bot-challenge that blocks Rebill API
+// calls (the client search below) from Vercel's regular Node functions —
+// see the same note on src/app/admin/quotes/page.tsx.
+export const runtime = "edge";
 
 export default async function ClientsPage({
   searchParams,
