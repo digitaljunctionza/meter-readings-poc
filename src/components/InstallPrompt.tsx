@@ -23,7 +23,7 @@ function isStandalone(): boolean {
 
 export function InstallPrompt({ className }: { className?: string }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showIosHint, setShowIosHint] = useState(false);
+  const [showHint, setShowHint] = useState(false);
   const [installed, setInstalled] = useState(true);
 
   useEffect(() => {
@@ -42,8 +42,12 @@ export function InstallPrompt({ className }: { className?: string }) {
     };
   }, []);
 
+  // Only hide once we're sure it's actually installed — never hide just
+  // because the browser hasn't fired its install-eligibility event yet.
+  // That event is unreliable (requires specific engagement heuristics and
+  // only fires once per load), so the button always shows and falls back
+  // to on-screen instructions when there's no native prompt to trigger.
   if (installed) return null;
-  if (!deferredPrompt && !isIos()) return null;
 
   async function handleClick() {
     if (deferredPrompt) {
@@ -55,7 +59,7 @@ export function InstallPrompt({ className }: { className?: string }) {
       setDeferredPrompt(null);
       return;
     }
-    setShowIosHint(true);
+    setShowHint(true);
   }
 
   return (
@@ -80,22 +84,30 @@ export function InstallPrompt({ className }: { className?: string }) {
         Install
       </button>
 
-      {showIosHint && (
+      {showHint && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4"
-          onClick={() => setShowIosHint(false)}
+          onClick={() => setShowHint(false)}
         >
           <div
             className="w-full max-w-sm rounded-2xl border-2 border-accent-light bg-white p-5 text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <p className="mb-2 font-bold text-accent">Add to Home Screen</p>
-            <p className="text-sm text-gray-600">
-              Tap the Share icon in Safari, then choose &quot;Add to Home Screen&quot;.
-            </p>
+            {isIos() ? (
+              <p className="text-sm text-gray-600">
+                Tap the Share icon in Safari, then choose &quot;Add to Home Screen&quot;.
+              </p>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Open your browser&apos;s menu (usually ⋮ or ⋯ in the top corner) and look for
+                &quot;Install app&quot; or &quot;Add to Home Screen&quot;. If you don&apos;t see it, your browser may
+                not support installing this app yet — Chrome and Edge support it best.
+              </p>
+            )}
             <button
               type="button"
-              onClick={() => setShowIosHint(false)}
+              onClick={() => setShowHint(false)}
               className="mt-4 w-full rounded-full bg-accent py-2.5 text-sm font-semibold text-white"
             >
               Got it

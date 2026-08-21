@@ -8,6 +8,12 @@ import { isConfigured, listQuotes, type Quote } from "@/lib/rebill/client";
 import type { Client } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+// Experiment: Vercel's Edge runtime routes through a different network path
+// than the default Node serverless functions — worth testing whether that
+// avoids the Cloudflare bot-challenge blocking Rebill API calls made from
+// Node. Not a guaranteed fix; revert this line if it causes other issues
+// or doesn't change the outcome.
+export const runtime = "edge";
 
 const STATUS_STYLE: Record<Quote["status"], string> = {
   draft: "bg-gray-100 text-gray-600",
