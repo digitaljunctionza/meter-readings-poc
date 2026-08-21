@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClientRecord } from "@/app/admin/clients/actions";
+import { Modal } from "@/components/Modal";
 
 export function AddClientForm() {
   const router = useRouter();
@@ -29,60 +30,60 @@ export function AddClientForm() {
     });
   }
 
-  if (!open) {
-    return (
+  return (
+    <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 w-fit items-center gap-1 rounded-full bg-accent px-4 text-sm font-semibold text-white"
+        className="flex h-10 w-fit items-center gap-1.5 rounded-full border-2 border-dashed border-accent-light px-4 text-sm font-semibold text-accent hover:border-accent"
       >
-        + Add client
+        + New client
       </button>
-    );
-  }
 
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-3 rounded-lg border-2 border-accent-light p-3"
-    >
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold text-accent">Client name</span>
-        <input
-          type="text"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Tarragon Two Body Corporate"
-          className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
-        />
-      </label>
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold text-accent">Contact email (optional)</span>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
-        />
-      </label>
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          {isPending ? "Adding..." : "Add client"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-full border-2 border-accent-light px-4 py-2 text-sm font-medium text-gray-600"
-        >
-          Cancel
-        </button>
-      </div>
-      {error && <p className="text-sm text-red-700">{error}</p>}
-    </form>
+      {open && (
+        <Modal title="Add a client" onClose={() => setOpen(false)}>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-accent">Client name</span>
+              <input
+                type="text"
+                autoFocus
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Tarragon Two Body Corporate"
+                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-accent">Contact email (optional)</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+              />
+            </label>
+            {error && <p className="text-sm text-red-700">{error}</p>}
+            <div className="mt-1 flex gap-2">
+              <button
+                type="submit"
+                disabled={isPending}
+                className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {isPending ? "Adding…" : "Add client"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-full border-2 border-accent-light px-4 py-2 text-sm font-medium text-gray-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </>
   );
 }

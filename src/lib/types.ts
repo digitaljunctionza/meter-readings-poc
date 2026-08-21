@@ -8,6 +8,9 @@ export interface Client {
   id: string;
   name: string;
   contact_email: string | null;
+  /** Rebill's client ID, set manually by an admin once per client so quote
+   * creation can reference it directly instead of a lookup/create flow. */
+  rebill_client_id: string | null;
   created_at: string;
 }
 
@@ -34,7 +37,25 @@ export interface Meter {
   label: string;
   location_note: string | null;
   is_communal: boolean;
+  serial: string | null;
+  /** Set once this meter has been physically replaced — null means active. */
+  retired_at: string | null;
+  replaced_by_meter_id: string | null;
   created_at: string;
+}
+
+export interface MeterReplacement {
+  id: string;
+  property_id: string;
+  unit_id: string | null;
+  service: Service;
+  old_meter_id: string;
+  new_meter_id: string;
+  closing_reading_id: string;
+  opening_reading_id: string;
+  note: string | null;
+  created_at: string;
+  created_by: string | null;
 }
 
 export interface MeterReading {
@@ -46,6 +67,8 @@ export interface MeterReading {
   captured_by: string | null;
   notes: string | null;
   flag_status: FlagStatus;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
   created_at: string;
   /**
    * Legacy columns, retained by migration 002 so the previous deploy can

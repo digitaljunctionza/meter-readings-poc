@@ -182,41 +182,58 @@ export function MeterManager({
         </p>
       )}
 
-      {meters.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          {meters.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-center gap-2 rounded-lg border-2 border-accent-light px-3 py-2 text-xs"
-            >
-              <span
-                className={`shrink-0 rounded-full border-2 bg-white px-2 py-0.5 font-medium capitalize ${SERVICE_COLOR[m.service]}`}
-              >
-                {m.service}
-              </span>
-              <span className="min-w-0 flex-1 truncate font-medium text-gray-800">
-                {m.label}
-                {m.is_communal && (
-                  <span className="ml-1.5 font-normal text-gray-400">communal</span>
-                )}
-              </span>
-              <span className="shrink-0 text-gray-500">
-                {m.reading_count} reading{m.reading_count === 1 ? "" : "s"}
-              </span>
-              {m.reading_count === 0 && (
-                <button
-                  type="button"
-                  onClick={() => handleDelete(m.id)}
-                  disabled={isPending}
-                  className="shrink-0 text-red-600 underline disabled:opacity-50"
+      {meters.length > 0 &&
+        (["electricity", "water"] as const).map((s) => {
+          const group = meters.filter((m) => m.service === s);
+          if (group.length === 0) return null;
+          return (
+            <details key={s} className="group overflow-hidden rounded-xl border-2 border-accent-light" open={group.length <= 12}>
+              <summary className="flex cursor-pointer list-none items-center gap-2 bg-gray-50 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" className="shrink-0 text-gray-400 transition-transform group-open:rotate-90" aria-hidden="true">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span
+                  className={`text-[11.5px] font-bold capitalize ${s === "water" ? "text-blue-600" : "text-amber-600"}`}
                 >
-                  Delete
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                  {s} ({group.length})
+                </span>
+              </summary>
+              <div className="flex flex-col gap-1.5 p-2.5">
+              {group.map((m) => (
+                <div
+                  key={m.id}
+                  className="flex items-center gap-2 rounded-lg border-2 border-accent-light px-3 py-2 text-xs"
+                >
+                  <span
+                    className={`shrink-0 rounded-full border-2 bg-white px-2 py-0.5 font-medium capitalize ${SERVICE_COLOR[m.service]}`}
+                  >
+                    {m.unit_number ?? m.service}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-medium text-gray-800">
+                    {m.label}
+                    {m.is_communal && (
+                      <span className="ml-1.5 font-normal text-gray-400">communal</span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-gray-500">
+                    {m.reading_count} reading{m.reading_count === 1 ? "" : "s"}
+                  </span>
+                  {m.reading_count === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(m.id)}
+                      disabled={isPending}
+                      className="shrink-0 text-red-600 underline disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              ))}
+              </div>
+            </details>
+          );
+        })}
     </div>
   );
 }

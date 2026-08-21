@@ -2,154 +2,280 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
-import { buildReportRows } from "@/lib/report";
-import { ReadingsTable } from "@/components/ReadingsTable";
-import { ReportControls } from "@/components/ReportControls";
-import { ReportDashboard } from "@/components/ReportDashboard";
-import { LogoutButton } from "@/components/LogoutButton";
-import { ComingSoon } from "@/components/ComingSoon";
-import type { Client, Property, Service } from "@/lib/types";
+import { InstallPrompt } from "@/components/InstallPrompt";
+import { BottomNav } from "@/components/BottomNav";
+import type { Client, FlagStatus, Meter, MeterReading, Property } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{
-    property?: string;
-    from?: string;
-    to?: string;
-    unit?: string;
-    service?: string;
-    searched?: string;
-  }>;
-}) {
+function monthStartIso(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+const FLAG_LABEL: Partial<Record<FlagStatus, string>> = {
+  below_prev: "fell below its previous reading",
+  above_2x_avg: "well above its own average",
+  possible_partial: "looks like an incomplete entry",
+};
+
+export default async function AdminDashboardPage() {
   const profile = await getProfile();
   if (!profile) redirect("/login?next=/admin");
   if (profile.role !== "admin") redirect("/client");
 
-  const { property: selectedPropertyId, from, to, unit, service, searched } = await searchParams;
-  const hasSearched = searched === "1";
-
   const supabase = await createClient();
-  const { data: propertyRows } = await supabase.from("properties").select("*").order("name");
-  const properties = (propertyRows ?? []) as Property[];
 
-  const { data: clientRows } = await supabase.from("clients").select("*").order("name");
+  const [{ data: propertyRows }, { data: clientRows }, { data: meterRows }] = await Promise.all([
+    supabase.from("properties").select("*").order("name"),
+    supabase.from("clients").select("*").order("name"),
+    supabase.from("meters").select("*").is("retired_at", null),
+  ]);
+
+  const properties = (propertyRows ?? []) as Property[];
   const clients = (clientRows ?? []) as Client[];
   const clientById = new Map(clients.map((c) => [c.id, c]));
+  const meters = (meterRows ?? []) as Meter[];
 
-  const activePropertyId = selectedPropertyId || properties[0]?.id;
-  const activeProperty = properties.find((p) => p.id === activePropertyId);
-  const activeClient = activeProperty ? clientById.get(activeProperty.client_id) : undefined;
+  const metersByProperty = new Map<string, Meter[]>();
+  for (const m of meters) {
+    metersByProperty.set(m.property_id, [...(metersByProperty.get(m.property_id) ?? []), m]);
+  }
 
-  const dashboardRows = activePropertyId ? await buildReportRows(activePropertyId) : [];
-  const rows =
-    activePropertyId && hasSearched
-      ? await buildReportRows(activePropertyId, {
-          from,
-          to,
-          unitNumber: unit,
-          service: service as Service | undefined,
-        })
-      : [];
+  const meterIds = meters.map((m) => m.id);
+  const { data: readingRows } = meterIds.length
+    ? await supabase
+        .from("meter_readings")
+        .select("*")
+        .in("meter_id", meterIds)
+        .order("captured_at", { ascending: false })
+    : { data: [] };
+
+  // Latest reading per meter — the current state that drives both "read
+  // this round" and "open flag" for every screen below.
+  const latestByMeter = new Map<string, MeterReading>();
+  for (const r of (readingRows ?? []) as MeterReading[]) {
+    if (!latestByMeter.has(r.meter_id)) latestByMeter.set(r.meter_id, r);
+  }
+
+  const monthStart = monthStartIso();
+
+  interface PropertySummary {
+    property: Property;
+    clientName: string;
+    total: number;
+    read: number;
+    openFlags: { meter: Meter; reading: MeterReading }[];
+  }
+
+  const summaries: PropertySummary[] = properties.map((p) => {
+    const propMeters = metersByProperty.get(p.id) ?? [];
+    let read = 0;
+    const openFlags: { meter: Meter; reading: MeterReading }[] = [];
+    for (const m of propMeters) {
+      const latest = latestByMeter.get(m.id);
+      if (latest && latest.captured_at >= monthStart) read++;
+      if (latest && latest.flag_status !== "ok" && !latest.reviewed_at) {
+        openFlags.push({ meter: m, reading: latest });
+      }
+    }
+    return {
+      property: p,
+      clientName: clientById.get(p.client_id)?.name ?? "—",
+      total: propMeters.length,
+      read,
+      openFlags,
+    };
+  });
+
+  const totalMeters = summaries.reduce((sum, s) => sum + s.total, 0);
+  const totalRead = summaries.reduce((sum, s) => sum + s.read, 0);
+  const allOpenFlags = summaries.flatMap((s) => s.openFlags.map((f) => ({ ...f, property: s.property })));
+  const completeCount = summaries.filter((s) => s.total > 0 && s.read === s.total && s.openFlags.length === 0).length;
+  const notStartedCount = summaries.filter((s) => s.total > 0 && s.read === 0).length;
+
+  const inProgress = summaries
+    .filter((s) => s.total > 0 && s.read < s.total)
+    .sort((a, b) => b.read / (b.total || 1) - a.read / (a.total || 1));
+  const continueTarget = inProgress[0];
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-6 overflow-x-hidden bg-white px-4 py-6">
-      <div className="no-print flex min-w-0 items-center gap-3 rounded-2xl bg-accent px-3 py-3">
-        <Link
-          href="/"
-          aria-label="Back to home"
-          className="flex h-10 w-10 shrink-0 items-center justify-center text-white"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M15 18l-6-6 6-6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </Link>
-        <h1 className="min-w-0 flex-1 truncate text-sm font-bold text-white">
-          Admin: meter readings
-        </h1>
-        <Link
-          href="/admin/clients"
-          className="flex h-10 shrink-0 items-center justify-center rounded-full border-2 border-white px-4 text-sm font-medium text-white"
-        >
-          Clients
-        </Link>
-        <Link
-          href="/capture"
-          className="flex h-10 shrink-0 items-center justify-center rounded-full border-2 border-white px-4 text-sm font-medium text-white"
-        >
-          Capture
-        </Link>
-        <LogoutButton className="flex h-10 shrink-0 items-center justify-center rounded-full px-3 text-sm font-medium text-white/80" />
-      </div>
-
-      <h1 className="hidden text-lg font-bold text-accent print:block">
-        {activeProperty?.name} — meter readings
-      </h1>
-
-      {properties.length === 0 ? (
-        <p className="text-sm text-gray-500">
-          No properties yet.{" "}
-          <Link href="/admin/clients" className="text-accent underline">
-            Add a client and property
-          </Link>{" "}
-          to get started.
-        </p>
-      ) : (
-        <div className="no-print flex flex-wrap gap-2">
-          {properties.map((p) => (
-            <Link
-              key={p.id}
-              href={`/admin?property=${p.id}`}
-              className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium ${
-                p.id === activePropertyId
-                  ? "border-accent bg-accent text-white"
-                  : "border-accent-light text-gray-700 hover:border-accent"
-              }`}
-            >
-              {p.name}
-            </Link>
-          ))}
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-app-bg pb-32">
+      <div className="flex flex-col gap-4 bg-navy-900 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+14px)] text-white">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] font-medium tracking-[0.08em] text-green-500">
+              {new Date().toLocaleDateString("en-ZA", { month: "long", year: "numeric" }).toUpperCase()}
+            </p>
+            <h1 className="truncate text-xl font-bold tracking-tight">
+              {new Date().toLocaleDateString("en-ZA", { month: "long" })} round
+            </h1>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <InstallPrompt />
+          </div>
         </div>
-      )}
-
-      {activeClient && (
-        <p className="no-print text-sm text-gray-500">
-          Client: <span className="font-medium text-gray-700">{activeClient.name}</span>
+        <div className="flex items-center gap-2.5">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.16]">
+            <div
+              className="h-full rounded-full bg-green-500"
+              style={{ width: `${totalMeters > 0 ? Math.round((totalRead / totalMeters) * 100) : 0}%` }}
+            />
+          </div>
+          <span className="font-mono text-xs font-bold tabular-nums">
+            {totalRead}/{totalMeters}
+          </span>
+        </div>
+        <p className="text-[11px] text-white/50">
+          {Math.max(totalMeters - totalRead, 0)} meters left across {properties.length} propert
+          {properties.length === 1 ? "y" : "ies"}
         </p>
-      )}
-
-      <div className="no-print flex flex-wrap items-center gap-3">
-        {activeProperty && (
-          <a
-            href={`https://wa.me/27725541634?text=${encodeURIComponent(
-              `Hi Wayne, I have a query about the meter readings for ${activeProperty.name}.`
-            )}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex w-fit items-center gap-2 rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-white"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12.04 2c-5.52 0-10 4.48-10 10 0 1.77.46 3.5 1.34 5.02L2 22l5.13-1.35a9.96 9.96 0 0 0 4.91 1.29h.01c5.52 0 10-4.48 10-10s-4.48-10-10.01-10zm0 18.15a8.1 8.1 0 0 1-4.14-1.13l-.3-.18-3.05.8.81-2.97-.19-.3a8.13 8.13 0 0 1-1.25-4.37c0-4.5 3.66-8.15 8.15-8.15 4.5 0 8.15 3.66 8.15 8.15 0 4.5-3.66 8.15-8.15 8.15h-.03zm4.47-6.11c-.24-.12-1.44-.71-1.66-.79-.22-.08-.39-.12-.55.12-.16.24-.63.79-.78.95-.14.16-.29.18-.53.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.11-.49.11-.11.24-.29.36-.43.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.55-1.33-.76-1.82-.2-.48-.4-.42-.55-.42-.14 0-.3-.02-.46-.02-.16 0-.42.06-.64.3-.22.24-.85.83-.85 2.03s.87 2.36.99 2.52c.12.16 1.71 2.61 4.14 3.66.58.25 1.03.4 1.38.51.58.19 1.11.16 1.53.1.47-.07 1.44-.59 1.64-1.16.2-.57.2-1.06.14-1.16-.06-.1-.22-.16-.46-.28z" />
-            </svg>
-            Message Wayne
-          </a>
-        )}
-        <ComingSoon label="Cost & tariffs" />
       </div>
 
-      <ReportDashboard rows={dashboardRows} />
+      <div className="flex flex-1 flex-col gap-3 px-4 py-4">
+        {allOpenFlags.length > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5">
+            <div className="flex items-center gap-2.5">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" className="shrink-0 text-amber-600" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+                <path d="M12 8v5M12 16.5v.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <span className="flex-1 text-[13px] font-semibold text-amber-900">
+                {allOpenFlags.length} reading{allOpenFlags.length === 1 ? "" : "s"} need review
+              </span>
+              <Link
+                href="/admin/review"
+                className="rounded-lg border border-amber-300 px-2.5 py-1.5 text-[11px] font-semibold text-amber-800"
+              >
+                Open queue
+              </Link>
+            </div>
+            <p className="mt-2 text-[11.5px] leading-snug text-amber-800">
+              {allOpenFlags
+                .slice(0, 3)
+                .map((f) => `${f.meter.label} ${FLAG_LABEL[f.reading.flag_status] ?? "needs a second look"}`)
+                .join(". ")}
+              {allOpenFlags.length > 3 ? `, and ${allOpenFlags.length - 3} more.` : "."} Each is compared against
+              its own meter, not against the block.
+            </p>
+          </div>
+        )}
 
-      <ReportControls hasResults={hasSearched && rows.length > 0} />
+        <div className="flex gap-3">
+          <div className="flex-1 rounded-xl border border-border bg-surface p-3.5">
+            <p className="font-mono text-[9.5px] font-medium tracking-[0.07em] text-text-muted">COMPLETE</p>
+            <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-navy-900">{completeCount}</p>
+            <p className="mt-0.5 text-[10.5px] text-text-muted">fully read, no flags</p>
+          </div>
+          <div className="flex-1 rounded-xl border border-border bg-surface p-3.5">
+            <p className="font-mono text-[9.5px] font-medium tracking-[0.07em] text-text-muted">NOT STARTED</p>
+            <p className="mt-1 font-mono text-2xl font-bold tabular-nums text-navy-900">{notStartedCount}</p>
+            <p className="mt-0.5 text-[10.5px] text-text-muted">no meters read yet</p>
+          </div>
+        </div>
 
-      <ReadingsTable rows={rows} hasSearched={hasSearched} />
+        <p className="mt-1 font-mono text-[10px] font-medium tracking-[0.08em] text-text-faint">
+          PROPERTIES THIS ROUND
+        </p>
+        <div className="flex flex-col gap-2">
+          {summaries.map((s) => {
+            const pct = s.total > 0 ? Math.round((s.read / s.total) * 100) : 0;
+            const complete = s.total > 0 && s.read === s.total && s.openFlags.length === 0;
+            const blocked = s.openFlags.length > 0;
+            return (
+              <div
+                key={s.property.id}
+                className={`flex items-center gap-3 rounded-xl border px-3.5 py-3 ${
+                  complete ? "border-green-200 bg-green-50" : "border-border bg-surface"
+                }`}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-navy-900">{s.property.name}</p>
+                  {complete ? (
+                    <p className="mt-0.5 truncate text-[11px] text-green-700">
+                      {s.read}/{s.total} read · no open flags
+                    </p>
+                  ) : (
+                    <>
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-divider">
+                          <div
+                            className={`h-full rounded-full ${blocked ? "bg-amber-600" : "bg-green-500"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="font-mono text-[10.5px] font-semibold text-text-muted tabular-nums">
+                          {s.read}/{s.total}
+                        </span>
+                      </div>
+                      <p className={`mt-1 truncate text-[11px] ${blocked ? "text-amber-800" : "text-text-muted"}`}>
+                        {blocked
+                          ? `${s.openFlags.length} flag${s.openFlags.length === 1 ? "" : "s"} to review`
+                          : s.read === 0
+                            ? `Not started · ${s.total} meters`
+                            : `In progress · ${s.clientName}`}
+                      </p>
+                    </>
+                  )}
+                </div>
+                {complete ? (
+                  <Link
+                    href={`/admin/reports?property=${s.property.id}`}
+                    className="shrink-0 rounded-lg bg-green-500 px-3 py-2 text-[11px] font-semibold text-white"
+                  >
+                    View report
+                  </Link>
+                ) : blocked ? (
+                  <Link
+                    href="/admin/review"
+                    className="shrink-0 rounded-lg border border-amber-300 px-3 py-2 text-[11px] font-semibold text-amber-800"
+                  >
+                    Review
+                  </Link>
+                ) : s.read === 0 ? (
+                  <Link
+                    href={`/capture/${s.property.id}`}
+                    className="shrink-0 rounded-lg bg-green-500 px-3 py-2 text-[11px] font-semibold text-white"
+                  >
+                    Start
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/capture/${s.property.id}`}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M9 6l6 6-6 6" stroke="var(--text-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
+                )}
+              </div>
+            );
+          })}
+          {summaries.length === 0 && (
+            <p className="rounded-xl border border-border bg-surface px-4 py-4 text-sm text-text-muted">
+              No properties yet.{" "}
+              <Link href="/admin/clients" className="text-green-700 underline">
+                Add a client and property
+              </Link>
+              .
+            </p>
+          )}
+        </div>
+      </div>
+
+      <BottomNav
+        cta={
+          continueTarget && (
+            <Link
+              href={`/capture/${continueTarget.property.id}`}
+              className="flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-navy-700 text-[15px] font-semibold text-white"
+            >
+              Continue {continueTarget.property.name} · {continueTarget.total - continueTarget.read} left
+            </Link>
+          )
+        }
+      />
     </main>
   );
 }

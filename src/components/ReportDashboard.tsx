@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import type { ReadingRow } from "@/components/ReadingsTable";
 import type { FlagStatus, Service } from "@/lib/types";
+import { BoltIcon, DropletIcon } from "@/components/icons";
 
 const FLAG_LABEL: Record<FlagStatus, string> = {
   ok: "OK",
@@ -30,13 +31,17 @@ const FLAG_COLOR: Record<FlagStatus, string> = {
   possible_partial: "#2fb6de",
 };
 
-const SERVICE_META: Record<Service, { label: string; color: string }> = {
-  electricity: { label: "Electricity", color: "#d97706" },
-  water: { label: "Water", color: "#2563eb" },
+const SERVICE_META: Record<
+  Service,
+  { label: string; color: string; softBg: string; Icon: typeof BoltIcon }
+> = {
+  electricity: { label: "Electricity", color: "#d97706", softBg: "bg-amber-50", Icon: BoltIcon },
+  water: { label: "Water", color: "#2563eb", softBg: "bg-blue-50", Icon: DropletIcon },
 };
 
 function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRow[] }) {
   const meta = SERVICE_META[service];
+  const Icon = meta.Icon;
 
   const flagCounts: Record<FlagStatus, number> = {
     ok: 0,
@@ -64,12 +69,22 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm font-bold" style={{ color: meta.color }}>
-        {meta.label}
-      </p>
+      <div className="flex items-center gap-2">
+        <span
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${meta.softBg}`}
+          style={{ color: meta.color }}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <p className="text-sm font-bold" style={{ color: meta.color }}>
+          {meta.label}
+        </p>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border-2 border-accent-light p-3">
-          <p className="mb-2 text-xs font-bold text-accent">Reading status breakdown</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <p className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            Reading status breakdown
+          </p>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -92,8 +107,10 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
           </div>
         </div>
 
-        <div className="rounded-2xl border-2 border-accent-light p-3">
-          <p className="mb-2 text-xs font-bold text-accent">Monthly usage</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+          <p className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            Monthly usage
+          </p>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trendData}>
@@ -101,7 +118,7 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="usage" fill={meta.color} name={meta.label} />
+                <Bar dataKey="usage" fill={meta.color} name={meta.label} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -112,10 +129,13 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
 }
 
 export function ReportDashboard({ rows }: { rows: ReadingRow[] }) {
-  if (rows.length === 0) return null;
+  // Replacement marker rows aren't real readings — exclude them from every
+  // summary/aggregate here (see report.ts's ReadingRow.kind).
+  const readingRows = rows.filter((r) => r.kind !== "replacement");
+  if (readingRows.length === 0) return null;
 
-  const electricityRows = rows.filter((r) => r.service === "electricity");
-  const waterRows = rows.filter((r) => r.service === "water");
+  const electricityRows = readingRows.filter((r) => r.service === "electricity");
+  const waterRows = readingRows.filter((r) => r.service === "water");
 
   return (
     <div className="no-print flex flex-col gap-6">

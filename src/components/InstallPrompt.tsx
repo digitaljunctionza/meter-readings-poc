@@ -21,7 +21,7 @@ function isStandalone(): boolean {
   );
 }
 
-export function InstallPrompt() {
+export function InstallPrompt({ className }: { className?: string }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIosHint, setShowIosHint] = useState(false);
   const [installed, setInstalled] = useState(true);
@@ -63,9 +63,12 @@ export function InstallPrompt() {
       <button
         type="button"
         onClick={handleClick}
-        className="no-print fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-lg"
+        className={
+          className ??
+          "no-print flex h-10 items-center gap-1.5 rounded-full border border-white/20 px-3 text-xs font-medium text-white/80"
+        }
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
             d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"
             stroke="currentColor"
@@ -74,7 +77,7 @@ export function InstallPrompt() {
             strokeLinejoin="round"
           />
         </svg>
-        Add to Home Screen
+        Install
       </button>
 
       {showIosHint && (

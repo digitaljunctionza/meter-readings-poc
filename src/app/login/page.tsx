@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -68,87 +69,93 @@ function LoginForm() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center bg-white px-5 py-6">
-      <div className="mb-6 text-center">
-        <h1 className="text-xl font-bold text-accent">Meter Readings</h1>
-        <p className="text-sm text-gray-500">Wayne&apos;s Fix &amp; Finish</p>
-      </div>
+    <main className="flex min-h-screen w-full flex-col justify-between bg-navy-900 px-6 py-8">
+      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8">
+        <div className="flex flex-col gap-3">
+          <Image src="/icons/source-icon.png" alt="" width={64} height={64} className="rounded-2xl" priority />
+          <div className="flex gap-1.5 font-sans text-xs font-semibold tracking-[0.14em]">
+            <span className="text-white">WAYNE&apos;S</span>
+            <span className="text-green-500">FIX AND FINISH</span>
+          </div>
+          <p className="-mt-1.5 text-sm text-white/50">Meter readings</p>
+        </div>
 
-      <div className="mb-4 flex rounded-lg border-2 border-accent-light p-1">
-        <button
-          type="button"
-          onClick={() => setMode("signin")}
-          className={`flex-1 rounded-md py-2 text-sm font-medium ${
-            mode === "signin" ? "bg-accent text-white" : "text-gray-600"
-          }`}
-        >
-          Log in
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("signup")}
-          className={`flex-1 rounded-md py-2 text-sm font-medium ${
-            mode === "signup" ? "bg-accent text-white" : "text-gray-600"
-          }`}
-        >
-          Sign up
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {mode === "signup" && (
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-bold text-accent">Full name</span>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1 rounded-xl border border-white/[0.16] bg-white/[0.07] px-4 py-3 focus-within:border-blue-500">
+            <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-white/45">
+              EMAIL
+            </span>
             <input
-              type="text"
-              className="w-full rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-accent"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              type="email"
+              required
+              className="w-full bg-transparent text-[15px] font-medium text-white outline-none placeholder:text-white/30"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
             />
           </label>
-        )}
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-bold text-accent">Email</span>
-          <input
-            type="email"
-            required
-            className="w-full rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-accent"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
+          {mode === "signup" && (
+            <label className="flex flex-col gap-1 rounded-xl border border-white/[0.16] bg-white/[0.07] px-4 py-3 focus-within:border-blue-500">
+              <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-white/45">
+                FULL NAME
+              </span>
+              <input
+                type="text"
+                className="w-full bg-transparent text-[15px] font-medium text-white outline-none placeholder:text-white/30"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </label>
+          )}
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-bold text-accent">Password</span>
-          <input
-            type="password"
-            required
-            minLength={6}
-            className="w-full rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-accent"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
+          <label className="flex flex-col gap-1 rounded-xl border border-white/[0.16] bg-white/[0.07] px-4 py-3 focus-within:border-blue-500">
+            <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-white/45">
+              PASSWORD
+            </span>
+            <input
+              type="password"
+              required
+              minLength={6}
+              className="w-full bg-transparent text-[15px] font-medium text-white outline-none placeholder:text-white/30"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </label>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="mt-2 w-full rounded-full bg-accent py-4 text-base font-semibold text-white disabled:opacity-50"
-        >
-          {submitting ? "Please wait..." : mode === "signin" ? "Log in" : "Sign up"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-2 min-h-[52px] w-full rounded-xl bg-green-500 py-4 text-[15px] font-bold text-white transition-opacity disabled:opacity-50"
+          >
+            {submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Sign up"}
+          </button>
 
-      {error && (
-        <p className="mt-4 rounded-lg border-2 border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
+          {error && (
+            <p className="rounded-lg border border-red-600/40 bg-red-600/10 px-4 py-3 text-sm text-[#F0A6A0]">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
+            className="mt-1 min-h-[44px] text-center text-xs font-medium text-white/45 underline-offset-2 hover:underline"
+          >
+            {mode === "signin" ? "Need an admin account? Sign up" : "Already have an account? Log in"}
+          </button>
+        </form>
+      </div>
+
+      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 pt-6">
+        <p className="text-center text-[11px] leading-relaxed text-white/35">
+          Clients: use the link in your invite email to set a password the first time.
         </p>
-      )}
-
-      <Link href="/" className="mt-6 text-center text-sm text-gray-500 underline">
-        Back to home
-      </Link>
+        <Link href="/" className="text-center text-xs text-white/45 underline-offset-2 hover:underline">
+          Back to home
+        </Link>
+      </div>
     </main>
   );
 }

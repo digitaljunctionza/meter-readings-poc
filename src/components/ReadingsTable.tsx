@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react";
 import { formatDateTime } from "@/lib/date";
 import type { FlagStatus } from "@/lib/types";
+import { SearchIcon } from "@/components/icons";
 
 export interface ReadingRow {
   id: string;
+  kind?: "reading" | "replacement";
   captured_at: string;
   meter_id: string;
   meter_label: string;
@@ -18,6 +20,13 @@ export interface ReadingRow {
   flag_status: FlagStatus;
   photo_url: string | null;
   notes: string | null;
+  /** kind: "replacement" only — old/new meter identifiers for the marker copy. */
+  replacementDetail?: {
+    oldSerial: string | null;
+    newSerial: string | null;
+    closingValue: number;
+    openingValue: number;
+  };
 }
 
 const FLAG_LABEL: Record<FlagStatus, string> = {
@@ -28,10 +37,17 @@ const FLAG_LABEL: Record<FlagStatus, string> = {
 };
 
 const FLAG_CLASS: Record<FlagStatus, string> = {
-  ok: "border-green-300 text-green-700",
-  below_prev: "border-red-300 text-red-700",
-  above_2x_avg: "border-orange-300 text-orange-700",
-  possible_partial: "border-accent text-accent",
+  ok: "border-green-200 text-green-700",
+  below_prev: "border-red-200 text-red-700",
+  above_2x_avg: "border-orange-200 text-orange-700",
+  possible_partial: "border-accent-light text-accent",
+};
+
+const FLAG_DOT_CLASS: Record<FlagStatus, string> = {
+  ok: "bg-green-500",
+  below_prev: "bg-red-500",
+  above_2x_avg: "bg-orange-500",
+  possible_partial: "bg-accent",
 };
 
 type SortKey = "date" | "unit";
@@ -68,13 +84,18 @@ function SortIcon({ direction }: { direction: SortDir | null }) {
   );
 }
 
-export function ReadingsTable({
-  rows,
-  hasSearched,
-}: {
-  rows: ReadingRow[];
-  hasSearched: boolean;
-}) {
+function EmptyState({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 px-4 py-10 text-center">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+        <SearchIcon className="h-5 w-5" />
+      </div>
+      <p className="max-w-sm text-sm text-slate-500">{children}</p>
+    </div>
+  );
+}
+
+export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -100,97 +121,138 @@ export function ReadingsTable({
     }
   }
 
-  if (!hasSearched) {
-    return (
-      <p className="rounded-2xl border-2 border-dashed border-accent-light px-4 py-6 text-center text-sm text-gray-500">
-        Enter a unit number, service, and/or date range above, then press Look up.
-      </p>
-    );
+  function toggleSelected(id: string) {
+    setSelectedId((current) => (current === id ? null : id));
   }
 
   if (rows.length === 0) {
-    return <p className="text-gray-500">No readings found for that search.</p>;
+    return <EmptyState>Use the filters above to find specific readings.</EmptyState>;
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border-2 border-accent-light">
-      <table className="min-w-full divide-y divide-accent-light text-sm">
-        <thead className="bg-accent-light">
-          <tr>
-            <th className="px-3 py-2 text-left font-bold text-accent">
-              <button
-                type="button"
-                onClick={() => handleSort("date")}
-                className="flex items-center gap-1"
-              >
-                Date
-                <SortIcon direction={sortKey === "date" ? sortDir : null} />
-              </button>
-            </th>
-            <th className="px-3 py-2 text-left font-bold text-accent">
-              <button
-                type="button"
-                onClick={() => handleSort("unit")}
-                className="flex items-center gap-1"
-              >
-                Unit
-                <SortIcon direction={sortKey === "unit" ? sortDir : null} />
-              </button>
-            </th>
-            <th className="px-3 py-2 text-left font-bold text-accent">Service</th>
-            <th className="px-3 py-2 text-right font-bold text-accent">Reading</th>
-            <th className="px-3 py-2 text-right font-bold text-accent">Previous</th>
-            <th className="px-3 py-2 text-right font-bold text-accent">Usage</th>
-            <th className="px-3 py-2 text-left font-bold text-accent">Status</th>
-            <th className="px-3 py-2 text-left font-bold text-accent">Photo</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-accent-light">
-          {sortedRows.map((r) => (
-            <tr
-              key={r.id}
-              onClick={() => setSelectedId((current) => (current === r.id ? null : r.id))}
-              className={`cursor-pointer ${
-                selectedId === r.id ? "bg-accent-light" : "hover:bg-accent-light/40"
-              }`}
-            >
-              <td className="whitespace-nowrap px-3 py-2">
-                {formatDateTime(r.captured_at)}
-              </td>
-              <td className="px-3 py-2">{r.unit_number}</td>
-              <td className="px-3 py-2 capitalize">{r.service}</td>
-              <td className="px-3 py-2 text-right">{r.reading_value.toLocaleString()}</td>
-              <td className="px-3 py-2 text-right">
-                {r.previous_value !== null ? r.previous_value.toLocaleString() : "-"}
-              </td>
-              <td className="px-3 py-2 text-right">
-                {r.usage !== null ? r.usage.toLocaleString() : "-"}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2">
-                <span
-                  className={`whitespace-nowrap rounded-full border-2 bg-white px-2 py-1 text-xs font-medium ${FLAG_CLASS[r.flag_status]}`}
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-100 text-sm">
+          <thead className="bg-slate-50">
+            <tr>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                <button
+                  type="button"
+                  onClick={() => handleSort("date")}
+                  className="flex items-center gap-1 rounded transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
-                  {FLAG_LABEL[r.flag_status]}
-                </span>
-              </td>
-              <td className="px-3 py-2">
-                {r.photo_url ? (
-                  <a
-                    href={r.photo_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-accent underline"
-                  >
-                    View
-                  </a>
-                ) : (
-                  "-"
-                )}
-              </td>
+                  Date
+                  <SortIcon direction={sortKey === "date" ? sortDir : null} />
+                </button>
+              </th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                <button
+                  type="button"
+                  onClick={() => handleSort("unit")}
+                  className="flex items-center gap-1 rounded transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                >
+                  Unit
+                  <SortIcon direction={sortKey === "unit" ? sortDir : null} />
+                </button>
+              </th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                Service
+              </th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                Reading
+              </th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                Previous
+              </th>
+              <th className="px-3 py-2.5 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                Usage
+              </th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                Status
+              </th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                Photo
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {sortedRows.map((r) =>
+              r.kind === "replacement" ? (
+                <tr key={r.id} className="bg-amber-50">
+                  <td colSpan={8} className="px-3 py-2.5 text-xs text-amber-800">
+                    <span className="font-semibold text-amber-900">Unit {r.unit_number} · {r.service}</span> —
+                    meter replaced {formatDateTime(r.captured_at)}.{" "}
+                    {r.replacementDetail && (
+                      <>
+                        {r.replacementDetail.oldSerial ? `${r.replacementDetail.oldSerial} ` : "Old meter "}
+                        closed {r.replacementDetail.closingValue.toLocaleString()} →{" "}
+                        {r.replacementDetail.newSerial ? `${r.replacementDetail.newSerial} ` : "new meter "}
+                        opened {r.replacementDetail.openingValue.toLocaleString()}.
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+              <tr
+                key={r.id}
+                tabIndex={0}
+                onClick={() => toggleSelected(r.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleSelected(r.id);
+                  }
+                }}
+                className={`cursor-pointer outline-none transition-colors focus-visible:bg-accent-light/60 ${
+                  selectedId === r.id ? "bg-accent-light/60" : "hover:bg-slate-50"
+                }`}
+              >
+                <td className="px-3 py-2.5 whitespace-nowrap tabular-nums text-slate-700">
+                  {formatDateTime(r.captured_at)}
+                </td>
+                <td className="px-3 py-2.5 font-medium text-slate-900">{r.unit_number}</td>
+                <td className="px-3 py-2.5 text-slate-600 capitalize">{r.service}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-900">
+                  {r.reading_value.toLocaleString("en-US")}
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-500">
+                  {r.previous_value !== null ? r.previous_value.toLocaleString("en-US") : "-"}
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-900">
+                  {r.usage !== null ? r.usage.toLocaleString("en-US") : "-"}
+                </td>
+                <td className="px-3 py-2.5 whitespace-nowrap">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full border bg-white px-2 py-1 text-xs font-medium whitespace-nowrap ${FLAG_CLASS[r.flag_status]}`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${FLAG_DOT_CLASS[r.flag_status]}`}
+                      aria-hidden="true"
+                    />
+                    {FLAG_LABEL[r.flag_status]}
+                  </span>
+                </td>
+                <td className="px-3 py-2.5">
+                  {r.photo_url ? (
+                    <a
+                      href={r.photo_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded font-medium text-accent underline decoration-accent-light underline-offset-2 hover:decoration-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </td>
+              </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

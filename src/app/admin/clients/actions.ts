@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
+import { listClients, type RebillClient } from "@/lib/rebill/client";
 import type { Service } from "@/lib/types";
 
 export async function createClientRecord(name: string, contactEmail: string | null) {
@@ -22,6 +23,42 @@ export async function createClientRecord(name: string, contactEmail: string | nu
 
   revalidatePath("/admin/clients");
   return data.id as string;
+}
+
+export async function updateRebillClientId(clientId: string, rebillClientId: string | null) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("clients")
+    .update({ rebill_client_id: rebillClientId?.trim() || null })
+    .eq("id", clientId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/clients");
+  revalidatePath("/admin/quotes");
+}
+
+/**
+ * Look up Rebill clients by name, so an admin can pick the right one from a
+ * list instead of copying a raw ID out of the API. Rebill's API has no
+ * search param (confirmed against the real GET /client response), so this
+ * fetches everything and filters here — fine at the client-list sizes a
+ * small business like this has.
+ */
+export async function searchRebillClients(query: string): Promise<RebillClient[]> {
+  await requireAdmin();
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed) return [];
+
+  const clients = await listClients();
+  return clients
+    .filter((c) => {
+      const haystack = `${c.name} ${c.surname ?? ""} ${c.business_name ?? ""} ${c.email}`.toLowerCase();
+      return haystack.includes(trimmed);
+    })
+    .slice(0, 8);
 }
 
 export async function createProperty(

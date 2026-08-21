@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Meter, MeterReading, Service, Unit } from "@/lib/types";
+import type { Meter, MeterReading, MeterReplacement, Service, Unit } from "@/lib/types";
 import type { ReadingRow } from "@/components/ReadingsTable";
 
 export interface ReportFilters {
@@ -71,9 +71,50 @@ export async function buildReportRows(
     };
   });
 
+  const { data: replacementRows } = await supabase
+    .from("meter_replacements")
+    .select("*")
+    .eq("property_id", propertyId);
+
+  const readingById = new Map(readings.map((r) => [r.id, r]));
+  const markerRows: ReadingRow[] = ((replacementRows ?? []) as MeterReplacement[])
+    .map((rep) => {
+      const closing = readingById.get(rep.closing_reading_id);
+      const opening = readingById.get(rep.opening_reading_id);
+      const oldMeter = meterById.get(rep.old_meter_id);
+      const newMeter = meterById.get(rep.new_meter_id);
+      if (!closing || !opening) return null;
+      const displayUnit = rep.unit_id ? unitById.get(rep.unit_id)?.unit_number ?? oldMeter?.label : oldMeter?.label;
+      const row: ReadingRow = {
+        id: rep.id,
+        kind: "replacement",
+        captured_at: closing.captured_at,
+        meter_id: rep.new_meter_id,
+        meter_label: newMeter?.label ?? "Meter replaced",
+        unit_number: displayUnit ?? "?",
+        service: rep.service,
+        reading_value: opening.reading_value,
+        previous_value: closing.reading_value,
+        usage: null,
+        flag_status: "ok",
+        photo_url: null,
+        notes: rep.note,
+        replacementDetail: {
+          oldSerial: oldMeter?.serial ?? null,
+          newSerial: newMeter?.serial ?? null,
+          closingValue: closing.reading_value,
+          openingValue: opening.reading_value,
+        },
+      };
+      return row;
+    })
+    .filter((r): r is ReadingRow => r !== null);
+
+  const combined = [...rows, ...markerRows];
+
   const query = filters?.unitNumber?.trim().toLowerCase();
 
-  const filtered = rows.filter((r) => {
+  const filtered = combined.filter((r) => {
     const capturedDate = r.captured_at.slice(0, 10);
     if (filters?.from && capturedDate < filters.from) return false;
     if (filters?.to && capturedDate > filters.to) return false;
@@ -88,5 +129,6 @@ export async function buildReportRows(
     return true;
   });
 
+  filtered.sort((a, b) => a.captured_at.localeCompare(b.captured_at));
   return filtered.reverse();
 }
