@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
+import { getCapturedPrompt, consumePrompt, subscribe } from "@/lib/installPromptStore";
 
 function isIos(): boolean {
   if (typeof navigator === "undefined") return false;
@@ -22,41 +18,40 @@ function isStandalone(): boolean {
 }
 
 export function InstallPrompt({ className }: { className?: string }) {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [hasPrompt, setHasPrompt] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [installed, setInstalled] = useState(true);
 
   useEffect(() => {
     setInstalled(isStandalone());
+    setHasPrompt(!!getCapturedPrompt());
 
-    function handleBeforeInstallPrompt(e: Event) {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    }
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    const unsubscribe = subscribe(() => {
+      setHasPrompt(!!getCapturedPrompt());
+      setInstalled(isStandalone());
+    });
     window.addEventListener("appinstalled", () => setInstalled(true));
 
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    };
+    return unsubscribe;
   }, []);
 
   // Only hide once we're sure it's actually installed — never hide just
   // because the browser hasn't fired its install-eligibility event yet.
-  // That event is unreliable (requires specific engagement heuristics and
-  // only fires once per load), so the button always shows and falls back
-  // to on-screen instructions when there's no native prompt to trigger.
+  // The event is captured globally (see installPromptStore.ts) from the
+  // very first page load, so by the time this button is visible it's
+  // already using whatever was captured, however early it fired.
   if (installed) return null;
 
   async function handleClick() {
+    const deferredPrompt = getCapturedPrompt();
     if (deferredPrompt) {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === "accepted") {
         setInstalled(true);
       }
-      setDeferredPrompt(null);
+      consumePrompt();
+      setHasPrompt(false);
       return;
     }
     setShowHint(true);
@@ -84,7 +79,7 @@ export function InstallPrompt({ className }: { className?: string }) {
         Install
       </button>
 
-      {showHint && (
+      {showHint && !hasPrompt && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-4 pb-4"
           onClick={() => setShowHint(false)}

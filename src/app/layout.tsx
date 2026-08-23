@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SplashScreen } from "@/components/SplashScreen";
+import { InstallPromptListener } from "@/components/InstallPromptListener";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -49,6 +50,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-white" suppressHydrationWarning>
         <SplashScreen />
+        <InstallPromptListener />
         {children}
       </body>
     </html>
