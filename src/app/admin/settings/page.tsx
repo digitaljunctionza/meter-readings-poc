@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile, getSessionUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { SettingsForm } from "@/components/SettingsForm";
 import { LogoutButton } from "@/components/LogoutButton";
 import { BottomNav } from "@/components/BottomNav";
+import { AdminInviteManager } from "@/components/AdminInviteManager";
+import type { AdminInvite } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +15,13 @@ export default async function AdminSettingsPage() {
   if (!profile) redirect("/login?next=/admin/settings");
   if (profile.role !== "admin") redirect("/client");
   const user = await getSessionUser();
+
+  const supabase = await createClient();
+  const { data: inviteRows } = await supabase
+    .from("admin_invites")
+    .select("*")
+    .order("created_at", { ascending: false });
+  const adminInvites = (inviteRows ?? []) as AdminInvite[];
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-app-bg pb-28">
@@ -31,6 +41,14 @@ export default async function AdminSettingsPage() {
           <h2 className="text-sm font-bold text-navy-900">Business</h2>
           <p className="mt-1 text-sm text-text-muted">Wayne&rsquo;s Fix &amp; Finish</p>
           <p className="text-xs text-text-faint">Meter Readings app</p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <h2 className="text-sm font-bold text-navy-900">Admin access</h2>
+          <p className="mt-1 mb-3 text-xs text-text-muted">
+            Invite another admin — they&rsquo;ll get the same full access you have.
+          </p>
+          <AdminInviteManager invites={adminInvites} />
         </div>
 
         <LogoutButton className="flex min-h-[48px] w-full items-center justify-center rounded-2xl border border-border-strong text-sm font-semibold text-navy-700" />

@@ -101,3 +101,15 @@ export interface PropertyInvite {
   expires_at: string;
   created_at: string;
 }
+
+export interface AdminInvite {
+  id: string;
+  token: string;
+  email: string | null;
+  created_by: string;
+  status: InviteStatus;
+  used_by: string | null;
+  used_at: string | null;
+  expires_at: string;
+  created_at: string;
+}

@@ -34,3 +34,33 @@ export async function revokeInvite(inviteId: string) {
 
   revalidatePath("/admin/clients");
 }
+
+export async function createAdminInvite() {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("admin_invites")
+    .insert({ created_by: admin.id })
+    .select("token")
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/settings");
+  return data.token as string;
+}
+
+export async function revokeAdminInvite(inviteId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("admin_invites")
+    .update({ status: "revoked" })
+    .eq("id", inviteId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/settings");
+}
