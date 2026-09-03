@@ -8,6 +8,13 @@ import { BottomNav } from "@/components/BottomNav";
 export const dynamic = "force-dynamic";
 
 const ICONS = {
+  users: (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="9" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M3.5 19a5.5 5.5 0 0111 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M16 5.5a3.2 3.2 0 010 5M17.5 19a5.5 5.5 0 00-2-4.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ),
   quotes: (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M4 6h16v12H4z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -61,6 +68,13 @@ export default async function AdminMorePage() {
       icon: ICONS.quotes,
       label: "Quotes",
       sub: `Build and send quotes via Rebill${openQuotesClients ? ` · ${openQuotesClients} client${openQuotesClients === 1 ? "" : "s"} linked` : ""}`,
+      badge: null,
+    },
+    {
+      href: "/admin/users",
+      icon: ICONS.users,
+      label: "Users",
+      sub: "Add people, set access, reset passwords",
       badge: null,
     },
     {

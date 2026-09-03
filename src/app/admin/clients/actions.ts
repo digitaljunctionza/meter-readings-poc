@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth";
-import { listClients, type RebillClient } from "@/lib/rebill/client";
+import {
+  listClients,
+  createRebillClient,
+  type CreateRebillClientParams,
+  type RebillClient,
+} from "@/lib/rebill/client";
 import type { Service } from "@/lib/types";
 
 export async function createClientRecord(name: string, contactEmail: string | null) {
@@ -38,6 +43,51 @@ export async function updateRebillClientId(clientId: string, rebillClientId: str
 
   revalidatePath("/admin/clients");
   revalidatePath("/admin/quotes");
+}
+
+/**
+ * Create the client in Rebill and link it here in one step, for a body
+ * corporate that isn't in Rebill yet — previously an admin had to leave the
+ * app, add them in Rebill, then come back and paste the ID.
+ *
+ * The Rebill call happens first: if it fails we have written nothing, so the
+ * admin can fix the input and retry. If the link write failed after Rebill
+ * succeeded we would orphan a Rebill client, so that case returns the new ID
+ * in the error for manual pasting rather than silently losing it.
+ */
+export async function createAndLinkRebillClient(
+  clientId: string,
+  params: CreateRebillClientParams
+) {
+  await requireAdmin();
+
+  const name = params.name.trim();
+  if (!name) throw new Error("Name is required");
+
+  const created = await createRebillClient({
+    name,
+    business_name: params.business_name?.trim() || undefined,
+    email: params.email?.trim() || undefined,
+    phone: params.phone?.trim() || undefined,
+    vat_number: params.vat_number?.trim() || undefined,
+  });
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("clients")
+    .update({ rebill_client_id: created.id })
+    .eq("id", clientId);
+
+  if (error) {
+    throw new Error(
+      `Created in Rebill (ID ${created.id}) but couldn't link it here: ${error.message}. ` +
+        `Paste that ID in manually rather than creating them again.`
+    );
+  }
+
+  revalidatePath("/admin/clients");
+  revalidatePath("/admin/quotes");
+  return created.id;
 }
 
 /**

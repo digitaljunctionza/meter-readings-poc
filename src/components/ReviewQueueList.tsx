@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { acceptReading, sendBackReading } from "@/app/admin/review/actions";
 import { formatDateTime } from "@/lib/date";
+import { haptic } from "@/lib/haptics";
 import type { FlagStatus, Service } from "@/lib/types";
 
 export interface ReviewItem {
@@ -30,12 +31,19 @@ export function ReviewQueueList({ items }: { items: ReviewItem[] }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function handle(action: (id: string) => Promise<void>, id: string) {
+  // The buzz fires on tap, not on completion: the action is a server round
+  // trip, and by the time it resolves the gesture that authorised vibration
+  // has expired on Android, so a success buzz would be silently dropped.
+  function handle(action: (id: string) => Promise<void>, id: string, feedback: "success" | "warning") {
+    haptic(feedback);
     setBusyId(id);
     startTransition(async () => {
       try {
         await action(id);
         router.refresh();
+      } catch (err) {
+        haptic("error");
+        throw err; // still surfaces to the error boundary as before
       } finally {
         setBusyId(null);
       }
@@ -109,7 +117,7 @@ export function ReviewQueueList({ items }: { items: ReviewItem[] }) {
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => handle(sendBackReading, item.readingId)}
+                onClick={() => handle(sendBackReading, item.readingId, "warning")}
                 className="flex-1 rounded-xl border border-border-strong py-3 text-[13px] font-semibold text-navy-700 disabled:opacity-50"
               >
                 {busy ? "…" : "Send back"}
@@ -117,7 +125,7 @@ export function ReviewQueueList({ items }: { items: ReviewItem[] }) {
               <button
                 type="button"
                 disabled={isPending}
-                onClick={() => handle(acceptReading, item.readingId)}
+                onClick={() => handle(acceptReading, item.readingId, "success")}
                 className="flex-1 rounded-xl bg-green-500 py-3 text-[13px] font-bold text-white disabled:opacity-50"
               >
                 {busy ? "…" : "Accept"}

@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { formatDate } from "@/lib/date";
+import { haptic } from "@/lib/haptics";
 import type { Service } from "@/lib/types";
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"] as const;
@@ -51,6 +52,7 @@ export function ReadingEntryForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function press(ch: string) {
+    haptic("tap");
     setRaw((s) => {
       if (ch === "back") return s.slice(0, -1);
       if (ch === "." && s.includes(".")) return s;
@@ -122,9 +124,14 @@ export function ReadingEntryForm({
   async function handleSubmit() {
     setError(null);
     if (!raw || !photo) {
+      haptic("error");
       setError("Enter a reading and attach a photo before saving.");
       return;
     }
+    // Fires on the tap rather than after the upload: Android drops vibrate()
+    // once the user activation that authorised it has expired, and a photo
+    // upload is easily long enough for that to happen.
+    haptic("success");
     setSubmitting(true);
     try {
       const supabase = createClient();
@@ -151,6 +158,7 @@ export function ReadingEntryForm({
       router.push(`/capture/${propertyId}`);
       router.refresh();
     } catch (err) {
+      haptic("error");
       setError(err instanceof Error ? err.message : "Unknown error");
       setSubmitting(false);
     }

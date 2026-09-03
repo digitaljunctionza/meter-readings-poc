@@ -76,6 +76,35 @@ export async function listClients(): Promise<RebillClient[]> {
   return clients;
 }
 
+export interface CreateRebillClientParams {
+  /** First name, or the company name for a body corporate. The only required field. */
+  name: string;
+  surname?: string;
+  /** Registered business name — the right field for a body corporate. */
+  business_name?: string;
+  email?: string;
+  /** E.164, e.g. "+27821234567". */
+  phone?: string;
+  /** Max 64 characters. */
+  vat_number?: string;
+}
+
+/**
+ * POST /client — schema transcribed from https://help.rebill.co.za/api/clients/
+ * (fetched 2026-09-03), not guessed. Returns 201 with just the new id.
+ *
+ * Rebill's free plan caps an account at 5 clients; past that the API rejects
+ * the call and the error surfaces through RebillError.
+ */
+export async function createRebillClient(
+  params: CreateRebillClientParams
+): Promise<{ id: string }> {
+  return request<{ id: string }>("/client", {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+}
+
 export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired" | "converted";
 
 export interface QuoteLineItem {

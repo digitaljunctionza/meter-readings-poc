@@ -150,7 +150,12 @@ export default async function ClientsPage({
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <InviteManager clientId={activeClient.id} invites={invites} />
-              <RebillClientIdField clientId={activeClient.id} rebillClientId={activeClient.rebill_client_id} />
+              <RebillClientIdField
+                clientId={activeClient.id}
+                clientName={activeClient.name}
+                contactEmail={activeClient.contact_email}
+                rebillClientId={activeClient.rebill_client_id}
+              />
             </div>
           </div>
 

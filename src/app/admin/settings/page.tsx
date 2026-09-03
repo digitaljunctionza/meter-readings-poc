@@ -6,6 +6,7 @@ import { SettingsForm } from "@/components/SettingsForm";
 import { LogoutButton } from "@/components/LogoutButton";
 import { BottomNav } from "@/components/BottomNav";
 import { AdminInviteManager } from "@/components/AdminInviteManager";
+import { HapticsToggle } from "@/components/HapticsToggle";
 import type { AdminInvite } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,11 @@ export default async function AdminSettingsPage() {
 
       <div className="flex flex-col gap-5 px-4 py-4">
         {user && <SettingsForm userId={user.id} email={user.email ?? ""} fullName={profile.full_name} />}
+
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <h2 className="mb-1 text-sm font-bold text-navy-900">Feedback</h2>
+          <HapticsToggle />
+        </div>
 
         <div className="rounded-2xl border border-border bg-surface p-5">
           <h2 className="text-sm font-bold text-navy-900">Business</h2>
