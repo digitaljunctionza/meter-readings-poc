@@ -1,3 +1,9 @@
+// SUPERSEDED — do not run. Written before migration 002 made `meters` a
+// first-class table: this writes meter_readings with unit_id + service and no
+// meter_id, which is now NOT NULL, so it fails outright. It also predates the
+// admin-only RLS from migration 001, so the anon key it uses can no longer
+// write at all. The current path is scripts/parse-sheet.mjs +
+// scripts/generate-import-sql.mjs -> supabase/import_readings.sql.
 // Direct-to-Supabase historical import, bypassing the app's /api/readings route.
 // Used for backfilling Feb-May 2026 while the DB still has the pre-auth-migration
 // permissive RLS policies (this script talks to Supabase directly with the anon

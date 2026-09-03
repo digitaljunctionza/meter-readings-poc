@@ -1,3 +1,9 @@
+// SUPERSEDED — do not run. Written before migration 002 made `meters` a
+// first-class table: this writes meter_readings with unit_id + service and no
+// meter_id, which is now NOT NULL, so it fails outright. It also predates the
+// admin-only RLS from migration 001, so the anon key it uses can no longer
+// write at all. The current path is scripts/parse-sheet.mjs +
+// scripts/generate-import-sql.mjs -> supabase/import_readings.sql.
 import { readFileSync } from "node:fs";
 
 const PROPERTY_ID = "f3438f7a-440f-4d7a-8e55-9d8efb86b694"; // Tarragon Place
