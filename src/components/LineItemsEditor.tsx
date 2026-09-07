@@ -1,9 +1,23 @@
 "use client";
 
 import type { QuoteFormLineItem } from "@/app/admin/quotes/actions";
+import type { RebillItem } from "@/lib/rebill/client";
 
 export function emptyItem(): QuoteFormLineItem {
   return { name: "", description: "", quantity: "1", unitPrice: "", vatRate: "15" };
+}
+
+/** A Rebill catalog item prefilled into a quote row: price cents → Rand, and
+ * Rebill's vat_type collapsed to the percent the form works in (only
+ * "standard" carries VAT; the rest are 0-rated one way or another). */
+function catalogItemToFormItem(it: RebillItem): QuoteFormLineItem {
+  return {
+    name: it.name,
+    description: it.description ?? "",
+    quantity: "1",
+    unitPrice: (it.price / 100).toFixed(2),
+    vatRate: it.vat_type === "standard" ? "15" : "0",
+  };
 }
 
 /**
@@ -16,13 +30,29 @@ export function LineItemsEditor({
   items,
   onChange,
   disabled,
+  catalogItems = [],
 }: {
   items: QuoteFormLineItem[];
   onChange: (items: QuoteFormLineItem[]) => void;
   disabled?: boolean;
+  /** Rebill catalog items, offered as a quick-add dropdown when non-empty. */
+  catalogItems?: RebillItem[];
 }) {
   function updateItem(index: number, patch: Partial<QuoteFormLineItem>) {
     onChange(items.map((it, i) => (i === index ? { ...it, ...patch } : it)));
+  }
+
+  function addFromCatalog(id: string) {
+    const found = catalogItems.find((c) => c.id === id);
+    if (!found) return;
+    const row = catalogItemToFormItem(found);
+    // Drop a trailing untouched blank row so picking a catalog item on a
+    // fresh form replaces it rather than leaving an empty line behind.
+    const trimmed =
+      items.length > 0 && !items[items.length - 1].name.trim() && !items[items.length - 1].unitPrice.trim()
+        ? items.slice(0, -1)
+        : items;
+    onChange([...trimmed, row]);
   }
 
   return (
@@ -91,13 +121,34 @@ export function LineItemsEditor({
         </div>
       ))}
       {!disabled && (
-        <button
-          type="button"
-          onClick={() => onChange([...items, emptyItem()])}
-          className="w-fit rounded-full border-2 border-accent-light px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-accent"
-        >
-          + Add item
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onChange([...items, emptyItem()])}
+            className="rounded-full border-2 border-accent-light px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-accent"
+          >
+            + Add item
+          </button>
+          {catalogItems.length > 0 && (
+            <select
+              value=""
+              onChange={(e) => {
+                addFromCatalog(e.target.value);
+                e.target.value = "";
+              }}
+              className="rounded-full border-2 border-accent-light bg-white px-3 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-accent"
+            >
+              <option value="" disabled>
+                Add from Rebill catalogue…
+              </option>
+              {catalogItems.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — R {(c.price / 100).toFixed(2)}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       )}
     </div>
   );

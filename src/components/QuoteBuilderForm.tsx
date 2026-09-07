@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createQuoteAction, type QuoteFormLineItem } from "@/app/admin/quotes/actions";
 import { LineItemsEditor, emptyItem } from "@/components/LineItemsEditor";
+import type { RebillItem } from "@/lib/rebill/client";
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -17,8 +18,10 @@ function plus30DaysIso(): string {
 
 export function QuoteBuilderForm({
   clients,
+  catalogItems = [],
 }: {
   clients: { id: string; name: string; rebillClientId: string }[];
+  catalogItems?: RebillItem[];
 }) {
   const router = useRouter();
   const [rebillClientId, setRebillClientId] = useState(clients[0]?.rebillClientId ?? "");
@@ -92,7 +95,7 @@ export function QuoteBuilderForm({
         </label>
       </div>
 
-      <LineItemsEditor items={items} onChange={setItems} />
+      <LineItemsEditor items={items} onChange={setItems} catalogItems={catalogItems} />
 
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-bold text-accent">Notes (optional)</span>

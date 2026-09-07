@@ -5,7 +5,7 @@ import { getProfile } from "@/lib/auth";
 import { QuoteBuilderForm } from "@/components/QuoteBuilderForm";
 import { QuoteList } from "@/components/QuoteList";
 import { BottomNav } from "@/components/BottomNav";
-import { isConfigured, listQuotes, type Quote } from "@/lib/rebill/client";
+import { isConfigured, listQuotes, listItems, type Quote, type RebillItem } from "@/lib/rebill/client";
 import type { Client } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -29,11 +29,19 @@ export default async function QuotesPage() {
 
   let quotes: Quote[] = [];
   let quotesError: string | null = null;
+  let catalogItems: RebillItem[] = [];
   if (connected) {
     try {
       quotes = await listQuotes({ includeAccepted: true, includeConverted: true });
     } catch (err) {
       quotesError = err instanceof Error ? err.message : "Failed to load quotes from Rebill";
+    }
+    // The catalogue is a nicety, not load-bearing — if it fails the quote
+    // forms still work, admins just type line items by hand.
+    try {
+      catalogItems = await listItems();
+    } catch {
+      catalogItems = [];
     }
   }
 
@@ -81,13 +89,18 @@ export default async function QuotesPage() {
           clients={clients
             .filter((c) => c.rebill_client_id)
             .map((c) => ({ id: c.id, name: c.name, rebillClientId: c.rebill_client_id as string }))}
+          catalogItems={catalogItems}
         />
       </div>
 
       {connected && !quotesError && (
         <div className="flex flex-col gap-2">
           <h2 className="text-sm font-bold text-accent">Quotes ({quotes.length})</h2>
-          <QuoteList quotes={quotes} clientNameByRebillId={clientNameByRebillId} />
+          <QuoteList
+            quotes={quotes}
+            clientNameByRebillId={clientNameByRebillId}
+            catalogItems={catalogItems}
+          />
           <p className="text-xs text-gray-500">Tap a quote to see its line items and edit them.</p>
         </div>
       )}

@@ -105,6 +105,27 @@ export async function createRebillClient(
   });
 }
 
+/**
+ * A saved catalog item (Rebill's "Items" screen). Reusable name + price that
+ * an admin can drop into a quote instead of retyping.
+ *
+ * GET /item — schema transcribed from https://help.rebill.co.za/api/items/
+ * (fetched 2026-09-07), not guessed.
+ */
+export interface RebillItem {
+  id: string;
+  name: string;
+  description?: string;
+  /** Cents. */
+  price: number;
+  vat_type: "none" | "standard" | "zero_rated" | "exempt";
+}
+
+export async function listItems(): Promise<RebillItem[]> {
+  const { items } = await request<{ items: RebillItem[] }>("/item");
+  return items;
+}
+
 export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired" | "converted";
 
 /**

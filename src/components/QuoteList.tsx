@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LineItemsEditor, emptyItem } from "@/components/LineItemsEditor";
 import { updateQuoteItemsAction, type QuoteFormLineItem } from "@/app/admin/quotes/actions";
-import { isEditableQuoteStatus, type Quote } from "@/lib/rebill/client";
+import { isEditableQuoteStatus, type Quote, type RebillItem } from "@/lib/rebill/client";
 
 const STATUS_STYLE: Record<Quote["status"], string> = {
   draft: "bg-gray-100 text-gray-600",
@@ -34,9 +34,11 @@ function toFormItem(it: Quote["items"][number]): QuoteFormLineItem {
 export function QuoteList({
   quotes,
   clientNameByRebillId,
+  catalogItems = [],
 }: {
   quotes: Quote[];
   clientNameByRebillId: Record<string, string>;
+  catalogItems?: RebillItem[];
 }) {
   const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -121,7 +123,12 @@ export function QuoteList({
               <div className="flex flex-col gap-3 border-t-2 border-accent-light px-3 py-3">
                 {isEditing ? (
                   <>
-                    <LineItemsEditor items={draftItems} onChange={setDraftItems} disabled={isPending} />
+                    <LineItemsEditor
+                      items={draftItems}
+                      onChange={setDraftItems}
+                      disabled={isPending}
+                      catalogItems={catalogItems}
+                    />
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
