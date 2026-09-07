@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
 import { QuoteBuilderForm } from "@/components/QuoteBuilderForm";
+import { QuoteList } from "@/components/QuoteList";
 import { BottomNav } from "@/components/BottomNav";
 import { isConfigured, listQuotes, type Quote } from "@/lib/rebill/client";
 import type { Client } from "@/lib/types";
@@ -14,15 +15,6 @@ export const dynamic = "force-dynamic";
 // Node. Not a guaranteed fix; revert this line if it causes other issues
 // or doesn't change the outcome.
 export const runtime = "edge";
-
-const STATUS_STYLE: Record<Quote["status"], string> = {
-  draft: "bg-gray-100 text-gray-600",
-  sent: "bg-blue-50 text-blue-700",
-  accepted: "bg-green-50 text-green-700",
-  declined: "bg-red-50 text-red-700",
-  expired: "bg-amber-50 text-amber-800",
-  converted: "bg-accent-light text-accent",
-};
 
 export default async function QuotesPage() {
   const profile = await getProfile();
@@ -45,7 +37,7 @@ export default async function QuotesPage() {
     }
   }
 
-  const clientNameByRebillId = new Map(
+  const clientNameByRebillId = Object.fromEntries(
     clients.filter((c) => c.rebill_client_id).map((c) => [c.rebill_client_id as string, c.name])
   );
 
@@ -95,29 +87,8 @@ export default async function QuotesPage() {
       {connected && !quotesError && (
         <div className="flex flex-col gap-2">
           <h2 className="text-sm font-bold text-accent">Quotes ({quotes.length})</h2>
-          {quotes.length === 0 ? (
-            <p className="text-sm text-gray-500">No quotes yet.</p>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {quotes.map((q) => (
-                <div
-                  key={q.id}
-                  className="flex flex-wrap items-center gap-2 rounded-lg border-2 border-accent-light px-3 py-2 text-sm"
-                >
-                  <span className="font-mono text-xs font-semibold text-gray-800">{q.number}</span>
-                  <span className="min-w-0 flex-1 truncate text-gray-700">
-                    {clientNameByRebillId.get(q.client_id) ?? q.client_id}
-                  </span>
-                  <span className="font-mono text-xs text-gray-600">
-                    {q.currency} {(q.amount / 100).toFixed(2)}
-                  </span>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${STATUS_STYLE[q.status]}`}>
-                    {q.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          <QuoteList quotes={quotes} clientNameByRebillId={clientNameByRebillId} />
+          <p className="text-xs text-gray-500">Tap a quote to see its line items and edit them.</p>
         </div>
       )}
 

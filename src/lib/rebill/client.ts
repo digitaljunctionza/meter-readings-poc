@@ -107,6 +107,15 @@ export async function createRebillClient(
 
 export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired" | "converted";
 
+/**
+ * Rebill only allows edits (line items, dates) while a quote is still a draft
+ * or has just been sent. Once a client has accepted/declined it, or it has
+ * expired or been converted to an invoice, the figures are locked.
+ */
+export function isEditableQuoteStatus(status: QuoteStatus): boolean {
+  return status === "draft" || status === "sent";
+}
+
 export interface QuoteLineItem {
   type: string; // e.g. "service"
   name: string;

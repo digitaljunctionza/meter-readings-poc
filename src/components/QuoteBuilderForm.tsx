@@ -3,10 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createQuoteAction, type QuoteFormLineItem } from "@/app/admin/quotes/actions";
-
-function emptyItem(): QuoteFormLineItem {
-  return { name: "", description: "", quantity: "1", unitPrice: "", vatRate: "15" };
-}
+import { LineItemsEditor, emptyItem } from "@/components/LineItemsEditor";
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -31,10 +28,6 @@ export function QuoteBuilderForm({
   const [items, setItems] = useState<QuoteFormLineItem[]>([emptyItem()]);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  function updateItem(index: number, patch: Partial<QuoteFormLineItem>) {
-    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,73 +92,7 @@ export function QuoteBuilderForm({
         </label>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-bold text-accent">Line items</span>
-        {items.map((item, i) => (
-          <div key={i} className="grid grid-cols-1 gap-2 rounded-lg border-2 border-accent-light p-3 sm:grid-cols-12">
-            <input
-              type="text"
-              placeholder="Item name"
-              required
-              value={item.name}
-              onChange={(e) => updateItem(i, { name: e.target.value })}
-              className="rounded-lg border-2 border-accent-light bg-white px-2.5 py-2 text-sm outline-none focus:border-accent sm:col-span-4"
-            />
-            <input
-              type="text"
-              placeholder="Description (optional)"
-              value={item.description}
-              onChange={(e) => updateItem(i, { description: e.target.value })}
-              className="rounded-lg border-2 border-accent-light bg-white px-2.5 py-2 text-sm outline-none focus:border-accent sm:col-span-3"
-            />
-            <input
-              type="number"
-              min="0"
-              step="1"
-              placeholder="Qty"
-              value={item.quantity}
-              onChange={(e) => updateItem(i, { quantity: e.target.value })}
-              className="rounded-lg border-2 border-accent-light bg-white px-2.5 py-2 text-sm outline-none focus:border-accent sm:col-span-2"
-            />
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Unit price (R)"
-              value={item.unitPrice}
-              onChange={(e) => updateItem(i, { unitPrice: e.target.value })}
-              className="rounded-lg border-2 border-accent-light bg-white px-2.5 py-2 text-sm outline-none focus:border-accent sm:col-span-2"
-            />
-            <div className="flex items-center gap-1 sm:col-span-1">
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                value={item.vatRate}
-                onChange={(e) => updateItem(i, { vatRate: e.target.value })}
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-2 py-2 text-sm outline-none focus:border-accent"
-              />
-              <span className="text-xs text-gray-400">%</span>
-            </div>
-            {items.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== i))}
-                className="text-left text-xs text-red-600 underline sm:col-span-12"
-              >
-                Remove item
-              </button>
-            )}
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => setItems((prev) => [...prev, emptyItem()])}
-          className="w-fit rounded-full border-2 border-accent-light px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-accent"
-        >
-          + Add item
-        </button>
-      </div>
+      <LineItemsEditor items={items} onChange={setItems} />
 
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-bold text-accent">Notes (optional)</span>
