@@ -8,28 +8,49 @@ import {
   sendPasswordReset,
   setUserPassword,
   setUserRole,
+  grantClientAccess,
+  revokeClientAccess,
   type AppUser,
 } from "@/app/admin/users/actions";
 import { Modal } from "@/components/Modal";
 import { formatDateTime } from "@/lib/date";
 import { haptic } from "@/lib/haptics";
-import type { Role } from "@/lib/types";
+import type { Client, Role } from "@/lib/types";
 
 type Dialog =
   | { kind: "create" }
   | { kind: "password"; user: AppUser }
+  | { kind: "access"; user: AppUser }
   | { kind: "delete"; user: AppUser }
   | null;
 
-export function UserManager({ users, currentUserId }: { users: AppUser[]; currentUserId: string }) {
+export function UserManager({
+  users,
+  currentUserId,
+  clients,
+  accessByUser,
+}: {
+  users: AppUser[];
+  currentUserId: string;
+  clients: Pick<Client, "id" | "name">[];
+  accessByUser: Record<string, string[]>;
+}) {
   const router = useRouter();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "client" as Role });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+    role: "client" as Role,
+    clientIds: [] as string[],
+  });
   const [newPassword, setNewPassword] = useState("");
+
+  const clientNameById = new Map(clients.map((c) => [c.id, c.name]));
 
   function run(fn: () => Promise<void>, onDone?: () => void) {
     setError(null);
@@ -48,8 +69,22 @@ export function UserManager({ users, currentUserId }: { users: AppUser[]; curren
   function close() {
     setDialog(null);
     setError(null);
-    setForm({ email: "", password: "", fullName: "", role: "client" });
+    setForm({ email: "", password: "", fullName: "", role: "client", clientIds: [] });
     setNewPassword("");
+  }
+
+  function toggleAccess(userId: string, clientId: string, currentlyGranted: boolean) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        if (currentlyGranted) await revokeClientAccess(userId, clientId);
+        else await grantClientAccess(userId, clientId);
+        router.refresh();
+      } catch (err) {
+        haptic("error");
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      }
+    });
   }
 
   const admins = users.filter((u) => u.role === "admin").length;
@@ -95,6 +130,15 @@ export function UserManager({ users, currentUserId }: { users: AppUser[]; curren
                   {u.lastSignInAt ? `Last in ${formatDateTime(u.lastSignInAt)}` : "Never signed in"}
                   {!u.confirmed && " · unconfirmed"}
                 </p>
+                {u.role === "client" && (
+                  <p className="mt-1 text-[10.5px] text-text-muted">
+                    {(accessByUser[u.id]?.length ?? 0) === 0 ? (
+                      <span className="font-semibold text-amber-700">No client access yet</span>
+                    ) : (
+                      <>Access: {accessByUser[u.id].map((id) => clientNameById.get(id) ?? id).join(", ")}</>
+                    )}
+                  </p>
+                )}
               </div>
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
@@ -114,6 +158,16 @@ export function UserManager({ users, currentUserId }: { users: AppUser[]; curren
               >
                 {u.role === "admin" ? "Make client" : "Make admin"}
               </button>
+              {u.role === "client" && (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => setDialog({ kind: "access", user: u })}
+                  className="rounded-lg border border-border-strong px-2.5 py-1.5 text-[11px] font-semibold text-navy-700 disabled:opacity-40"
+                >
+                  Access
+                </button>
+              )}
               <button
                 type="button"
                 disabled={isPending}
@@ -212,6 +266,40 @@ export function UserManager({ users, currentUserId }: { users: AppUser[]; curren
                   : "Sees only the reports for the clients they're given access to."}
               </span>
             </fieldset>
+            {form.role === "client" && (
+              <fieldset className="flex flex-col gap-1.5">
+                <legend className="text-xs font-bold text-accent">Client access</legend>
+                {clients.length === 0 ? (
+                  <span className="text-[11px] text-gray-500">
+                    No clients yet — add one under Clients &amp; meters, then grant access here.
+                  </span>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {clients.map((c) => (
+                      <label key={c.id} className="flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={form.clientIds.includes(c.id)}
+                          onChange={(e) =>
+                            setForm((s) => ({
+                              ...s,
+                              clientIds: e.target.checked
+                                ? [...s.clientIds, c.id]
+                                : s.clientIds.filter((id) => id !== c.id),
+                            }))
+                          }
+                          className="h-4 w-4"
+                        />
+                        {c.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <span className="text-[11px] text-gray-500">
+                  Grants every property under the client(s) checked. Can be changed later from Access.
+                </span>
+              </fieldset>
+            )}
             {error && <p className="text-xs text-red-700">{error}</p>}
             <button
               type="submit"
@@ -290,6 +378,42 @@ export function UserManager({ users, currentUserId }: { users: AppUser[]; curren
               </button>
             </div>
 
+            {error && <p className="text-xs text-red-700">{error}</p>}
+          </div>
+        </Modal>
+      )}
+
+      {dialog?.kind === "access" && (
+        <Modal title={`Access · ${dialog.user.fullName || dialog.user.email}`} onClose={close}>
+          <div className="flex flex-col gap-3">
+            <p className="text-xs text-gray-500">
+              Which clients&rsquo; properties can {dialog.user.fullName || dialog.user.email} see? Granting a
+              client gives access to every property under it.
+            </p>
+            {clients.length === 0 ? (
+              <p className="text-sm text-gray-500">No clients yet — add one under Clients &amp; meters.</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {clients.map((c) => {
+                  const granted = (accessByUser[dialog.user.id] ?? []).includes(c.id);
+                  return (
+                    <label
+                      key={c.id}
+                      className="flex items-center gap-2 rounded-lg border-2 border-accent-light px-3 py-2 text-sm text-gray-700"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={granted}
+                        disabled={isPending}
+                        onChange={() => toggleAccess(dialog.user.id, c.id, granted)}
+                        className="h-4 w-4"
+                      />
+                      {c.name}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
             {error && <p className="text-xs text-red-700">{error}</p>}
           </div>
         </Modal>

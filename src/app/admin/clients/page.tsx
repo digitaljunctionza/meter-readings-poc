@@ -7,6 +7,7 @@ import { AddPropertyForm } from "@/components/AddPropertyForm";
 import { MeterManager, type MeterRow } from "@/components/MeterManager";
 import { InviteManager } from "@/components/InviteManager";
 import { RebillClientIdField } from "@/components/RebillClientIdField";
+import { InlineDeleteControl } from "@/components/InlineDeleteControl";
 import { BottomNav } from "@/components/BottomNav";
 import type { Client, Meter, Property, PropertyInvite, Unit } from "@/lib/types";
 
@@ -157,6 +158,16 @@ export default async function ClientsPage({
                 rebillClientId={activeClient.rebill_client_id}
               />
             </div>
+            <InlineDeleteControl
+              kind="client"
+              id={activeClient.id}
+              label="Delete client"
+              blockedReason={
+                properties.length > 0
+                  ? `Remove ${properties.length} propert${properties.length === 1 ? "y" : "ies"} below before deleting this client.`
+                  : null
+              }
+            />
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-accent-light pt-4">
@@ -186,6 +197,17 @@ export default async function ClientsPage({
                 {activeProperty.address && <span className="text-xs text-gray-500">{activeProperty.address}</span>}
               </div>
               <MeterManager propertyId={activeProperty.id} meters={metersByProperty.get(activeProperty.id) ?? []} />
+              <InlineDeleteControl
+                kind="property"
+                id={activeProperty.id}
+                label="Delete property"
+                blockedReason={(() => {
+                  const meterCount = metersByProperty.get(activeProperty.id)?.length ?? 0;
+                  return meterCount > 0
+                    ? `Remove ${meterCount} meter${meterCount === 1 ? "" : "s"} above before deleting this property.`
+                    : null;
+                })()}
+              />
             </div>
           ) : null}
         </div>

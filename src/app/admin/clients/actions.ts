@@ -198,6 +198,60 @@ export async function createMeter(params: {
   return data.id as string;
 }
 
+export async function deleteProperty(propertyId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  // Meters (and their readings) cascade with the property at the DB level —
+  // refuse here so that can't happen silently. Deleting the meters first
+  // (each of those already guarded by its own reading count) is the
+  // deliberate, visible path.
+  const { count, error: countError } = await supabase
+    .from("meters")
+    .select("id", { count: "exact", head: true })
+    .eq("property_id", propertyId);
+
+  if (countError) throw new Error(countError.message);
+  if ((count ?? 0) > 0) {
+    throw new Error(
+      `This property has ${count} meter${count === 1 ? "" : "s"} and cannot be deleted. Delete its meters first.`
+    );
+  }
+
+  const { error } = await supabase.from("properties").delete().eq("id", propertyId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/clients");
+  revalidatePath("/admin");
+}
+
+export async function deleteClient(clientId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  // properties.client_id is ON DELETE RESTRICT, so this would fail at the DB
+  // layer anyway — checked here first for a message that names the count
+  // instead of a raw foreign-key error.
+  const { count, error: countError } = await supabase
+    .from("properties")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", clientId);
+
+  if (countError) throw new Error(countError.message);
+  if ((count ?? 0) > 0) {
+    throw new Error(
+      `This client has ${count} propert${count === 1 ? "y" : "ies"} and cannot be deleted. Delete them first.`
+    );
+  }
+
+  const { error } = await supabase.from("clients").delete().eq("id", clientId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/clients");
+  revalidatePath("/admin");
+  revalidatePath("/admin/quotes");
+}
+
 export async function deleteMeter(meterId: string) {
   await requireAdmin();
   const supabase = await createClient();

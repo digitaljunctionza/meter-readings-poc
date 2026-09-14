@@ -57,6 +57,8 @@ export async function createUser(params: {
   password: string;
   fullName: string;
   role: Role;
+  /** Clients (all their properties) this user should see. Ignored for admins. */
+  clientIds?: string[];
 }) {
   await requireAdmin();
   const admin = createAdminClient();
@@ -91,8 +93,62 @@ export async function createUser(params: {
     );
   }
 
+  const clientIds = params.role === "client" ? (params.clientIds ?? []) : [];
+  if (clientIds.length > 0) {
+    const { error: accessError } = await admin
+      .from("client_access")
+      .insert(clientIds.map((clientId) => ({ user_id: data.user.id, client_id: clientId })));
+
+    if (accessError) {
+      throw new Error(
+        `User ${email} was created but couldn't be given client access: ${accessError.message}. ` +
+          `Grant it from the users list rather than creating them again.`
+      );
+    }
+  }
+
   revalidatePath("/admin/users");
   return data.user.id;
+}
+
+/** Every client this user can currently see (via client_access — access is
+ * granted per client, which covers all of that client's properties). */
+export async function listClientAccess(): Promise<Record<string, string[]>> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.from("client_access").select("user_id, client_id");
+  if (error) throw new Error(error.message);
+
+  const byUser: Record<string, string[]> = {};
+  for (const row of data ?? []) {
+    (byUser[row.user_id as string] ??= []).push(row.client_id as string);
+  }
+  return byUser;
+}
+
+export async function grantClientAccess(userId: string, clientId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("client_access").insert({ user_id: userId, client_id: clientId });
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/users");
+}
+
+export async function revokeClientAccess(userId: string, clientId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("client_access")
+    .delete()
+    .eq("user_id", userId)
+    .eq("client_id", clientId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/users");
 }
 
 export async function setUserPassword(userId: string, password: string) {
