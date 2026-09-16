@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
 import { buildReportRows } from "@/lib/report";
+import { isEmailConfigured } from "@/lib/email/brevo";
 import { ReadingsTable } from "@/components/ReadingsTable";
 import { ReportControls } from "@/components/ReportControls";
 import { ReportDashboard } from "@/components/ReportDashboard";
+import { EmailReportButton } from "@/components/EmailReportButton";
 import { ComingSoon } from "@/components/ComingSoon";
 import { BottomNav } from "@/components/BottomNav";
 import type { Client, Property, Service } from "@/lib/types";
@@ -113,6 +115,25 @@ export default async function AdminReportsPage({
         <p className="no-print text-sm text-gray-500">
           Client: <span className="font-medium text-gray-700">{activeClient.name}</span>
         </p>
+      )}
+
+      {activeProperty && activeClient && (
+        isEmailConfigured() ? (
+          <EmailReportButton
+            propertyId={activeProperty.id}
+            clientName={activeClient.name}
+            contactEmail={activeClient.contact_email}
+            filters={{ from, to, unit, service }}
+          />
+        ) : (
+          <div className="no-print rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-900">
+            <p className="font-semibold text-amber-900">Email isn&apos;t connected</p>
+            <p className="mt-1 text-amber-800">
+              Set <code className="font-mono text-xs">BREVO_API_KEY</code> in your environment to email reports
+              to clients directly from support@wmfixandfinish.co.za.
+            </p>
+          </div>
+        )
       )}
 
       <ReportControls hasResults={rows.length > 0} />

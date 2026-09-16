@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatDateTime } from "@/lib/date";
+import { Modal } from "@/components/Modal";
 import type { FlagStatus } from "@/lib/types";
 import { SearchIcon } from "@/components/icons";
 
@@ -98,7 +99,7 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const sortedRows = useMemo(() => {
     const copy = [...rows];
@@ -121,9 +122,7 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
     }
   }
 
-  function toggleSelected(id: string) {
-    setSelectedId((current) => (current === id ? null : id));
-  }
+  const openReading = openId ? (rows.find((r) => r.id === openId) ?? null) : null;
 
   if (rows.length === 0) {
     return <EmptyState>Use the filters above to find specific readings.</EmptyState>;
@@ -136,20 +135,24 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
           <thead className="bg-slate-50">
             <tr>
               <th className="px-3 py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                {/* A <button> inside a <thead> that repeats across printed pages doesn't reliably
+                    re-render past the first page — this plain-text twin is what print actually shows. */}
+                <span className="hidden print:inline">Date</span>
                 <button
                   type="button"
                   onClick={() => handleSort("date")}
-                  className="flex items-center gap-1 rounded transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  className="no-print flex items-center gap-1 rounded transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   Date
                   <SortIcon direction={sortKey === "date" ? sortDir : null} />
                 </button>
               </th>
               <th className="px-3 py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                <span className="hidden print:inline">Unit</span>
                 <button
                   type="button"
                   onClick={() => handleSort("unit")}
-                  className="flex items-center gap-1 rounded transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  className="no-print flex items-center gap-1 rounded transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   Unit
                   <SortIcon direction={sortKey === "unit" ? sortDir : null} />
@@ -196,16 +199,14 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
               <tr
                 key={r.id}
                 tabIndex={0}
-                onClick={() => toggleSelected(r.id)}
+                onClick={() => setOpenId(r.id)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    toggleSelected(r.id);
+                    setOpenId(r.id);
                   }
                 }}
-                className={`cursor-pointer outline-none transition-colors focus-visible:bg-accent-light/60 ${
-                  selectedId === r.id ? "bg-accent-light/60" : "hover:bg-slate-50"
-                }`}
+                className="cursor-pointer outline-none transition-colors hover:bg-slate-50 focus-visible:bg-accent-light/60"
               >
                 <td className="px-3 py-2.5 whitespace-nowrap tabular-nums text-slate-700">
                   {formatDateTime(r.captured_at)}
@@ -234,15 +235,7 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
                 </td>
                 <td className="px-3 py-2.5">
                   {r.photo_url ? (
-                    <a
-                      href={r.photo_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="rounded font-medium text-accent underline decoration-accent-light underline-offset-2 hover:decoration-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                    >
-                      View
-                    </a>
+                    <span className="font-medium text-accent">View</span>
                   ) : (
                     <span className="text-slate-400">-</span>
                   )}
@@ -253,6 +246,78 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
           </tbody>
         </table>
       </div>
+
+      {openReading && (
+        <Modal
+          title={`${openReading.unit_number} · ${openReading.service}`}
+          onClose={() => setOpenId(null)}
+        >
+          <div className="flex flex-col gap-4">
+            {openReading.photo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={openReading.photo_url}
+                alt="Meter photo"
+                className="max-h-[50vh] w-full rounded-xl border border-slate-200 object-contain bg-slate-50"
+              />
+            ) : (
+              <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-400">
+                No photo attached
+              </div>
+            )}
+
+            <span
+              className={`inline-flex w-fit items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-xs font-medium ${FLAG_CLASS[openReading.flag_status]}`}
+            >
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${FLAG_DOT_CLASS[openReading.flag_status]}`}
+                aria-hidden="true"
+              />
+              {FLAG_LABEL[openReading.flag_status]}
+            </span>
+
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+              <div>
+                <dt className="text-xs text-slate-500">Captured</dt>
+                <dd className="font-medium text-slate-900">{formatDateTime(openReading.captured_at)}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-500">Reading</dt>
+                <dd className="font-mono font-semibold tabular-nums text-slate-900">
+                  {openReading.reading_value.toLocaleString("en-US")}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-500">Previous</dt>
+                <dd className="font-mono tabular-nums text-slate-700">
+                  {openReading.previous_value !== null ? openReading.previous_value.toLocaleString("en-US") : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-slate-500">Usage</dt>
+                <dd className="font-mono tabular-nums text-slate-700">
+                  {openReading.usage !== null ? openReading.usage.toLocaleString("en-US") : "—"}
+                </dd>
+              </div>
+            </dl>
+
+            {openReading.notes && (
+              <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">{openReading.notes}</p>
+            )}
+
+            {openReading.photo_url && (
+              <a
+                href={openReading.photo_url}
+                target="_blank"
+                rel="noreferrer"
+                className="w-fit text-sm font-medium text-accent underline decoration-accent-light underline-offset-2 hover:decoration-accent"
+              >
+                Open full-size photo in a new tab
+              </a>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

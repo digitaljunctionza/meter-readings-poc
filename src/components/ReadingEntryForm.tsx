@@ -6,7 +6,14 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { formatDate } from "@/lib/date";
 import { haptic } from "@/lib/haptics";
+import { queueReading } from "@/lib/offlineQueue";
 import type { Service } from "@/lib/types";
+
+function looksOffline(err: unknown): boolean {
+  if (typeof navigator !== "undefined" && !navigator.onLine) return true;
+  const message = err instanceof Error ? err.message : String(err);
+  return /network|fetch|offline/i.test(message);
+}
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back"] as const;
 
@@ -121,6 +128,31 @@ export function ReadingEntryForm({
     });
   }
 
+  async function saveOffline(capturedAt: string): Promise<boolean> {
+    if (!photo) return false;
+    try {
+      await queueReading({
+        propertyId,
+        meterId,
+        meterLabel,
+        unitNumber,
+        service,
+        rawValue: raw,
+        notes: note || null,
+        capturedAt,
+        photo,
+        photoName: photo.name,
+      });
+      router.push(`/capture/${propertyId}`);
+      router.refresh();
+      return true;
+    } catch {
+      // IndexedDB itself failed (private mode, storage disabled) — nothing
+      // left to fall back to, the caller shows the original error instead.
+      return false;
+    }
+  }
+
   async function handleSubmit() {
     setError(null);
     if (!raw || !photo) {
@@ -133,6 +165,18 @@ export function ReadingEntryForm({
     // upload is easily long enough for that to happen.
     haptic("success");
     setSubmitting(true);
+    const capturedAt = new Date().toISOString();
+
+    // No signal at all — skip straight to the local queue rather than
+    // waiting out a network timeout first.
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      if (await saveOffline(capturedAt)) return;
+      haptic("error");
+      setError("You're offline and this device couldn't save the reading locally either.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const supabase = createClient();
       const ext = photo.name.split(".").pop() || "jpg";
@@ -158,6 +202,9 @@ export function ReadingEntryForm({
       router.push(`/capture/${propertyId}`);
       router.refresh();
     } catch (err) {
+      // Connection dropped mid-upload (patchy signal on site, not a clean
+      // offline start) — same local-queue fallback as the offline fast path.
+      if (looksOffline(err) && (await saveOffline(capturedAt))) return;
       haptic("error");
       setError(err instanceof Error ? err.message : "Unknown error");
       setSubmitting(false);

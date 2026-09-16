@@ -135,6 +135,26 @@ export async function createProperty(
   return data.id as string;
 }
 
+export async function updateProperty(propertyId: string, name: string, address: string | null) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("Property name is required");
+
+  const { error } = await supabase
+    .from("properties")
+    .update({ name: trimmed, address: address?.trim() || null })
+    .eq("id", propertyId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/clients");
+  revalidatePath("/admin");
+  revalidatePath("/admin/reports");
+  revalidatePath("/client");
+}
+
 export async function createMeter(params: {
   propertyId: string;
   service: Service;

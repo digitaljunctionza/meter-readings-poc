@@ -77,7 +77,7 @@ export function BottomNav({ cta }: { cta?: ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md flex-col bg-surface">
+    <div className="no-print fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md flex-col bg-surface">
       {cta && (
         <div className="border-t border-border px-4 pb-2 pt-3">{cta}</div>
       )}

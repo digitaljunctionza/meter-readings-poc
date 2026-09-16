@@ -85,6 +85,37 @@ body {
   .no-print {
     display: none !important;
   }
+
+  /* Without this, the browser prints the on-screen layout verbatim: a
+     1024px-wide (max-w-5xl) container on a ~800px-wide portrait page, which
+     Chrome/Safari's print engine resolves by shrinking the WHOLE page down
+     to fit — tiny illegible text, not just a narrower table. Landscape plus
+     letting the page containers use the full printable width removes the
+     need for that shrink entirely. */
+  @page {
+    size: A4 landscape;
+    margin: 12mm 10mm;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  main {
+    max-width: none !important;
+    overflow: visible !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* The readings table scrolls horizontally on screen (.overflow-x-auto) —
+     on print that clips everything past the page edge instead of scrolling,
+     which is the "columns cut off" half of the scaling bug. Landscape + full
+     width above already gives the table room; this just stops it clipping. */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
 }
 
 @keyframes splash-fade {

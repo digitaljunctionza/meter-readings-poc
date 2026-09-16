@@ -8,6 +8,7 @@ import { MeterManager, type MeterRow } from "@/components/MeterManager";
 import { InviteManager } from "@/components/InviteManager";
 import { RebillClientIdField } from "@/components/RebillClientIdField";
 import { InlineDeleteControl } from "@/components/InlineDeleteControl";
+import { EditPropertyButton } from "@/components/EditPropertyButton";
 import { BottomNav } from "@/components/BottomNav";
 import type { Client, Meter, Property, PropertyInvite, Unit } from "@/lib/types";
 
@@ -195,6 +196,11 @@ export default async function ClientsPage({
               <div className="flex flex-wrap items-baseline gap-2">
                 <h3 className="font-bold text-gray-900">{activeProperty.name}</h3>
                 {activeProperty.address && <span className="text-xs text-gray-500">{activeProperty.address}</span>}
+                <EditPropertyButton
+                  propertyId={activeProperty.id}
+                  currentName={activeProperty.name}
+                  currentAddress={activeProperty.address}
+                />
               </div>
               <MeterManager propertyId={activeProperty.id} meters={metersByProperty.get(activeProperty.id) ?? []} />
               <InlineDeleteControl

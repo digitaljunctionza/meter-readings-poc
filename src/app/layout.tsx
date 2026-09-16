@@ -3,6 +3,8 @@ import { Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SplashScreen } from "@/components/SplashScreen";
 import { InstallPromptListener } from "@/components/InstallPromptListener";
+import { OfflineSyncListener } from "@/components/OfflineSyncListener";
+import { GlobalHapticListener } from "@/components/GlobalHapticListener";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -51,6 +53,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white" suppressHydrationWarning>
         <SplashScreen />
         <InstallPromptListener />
+        <OfflineSyncListener />
+        <GlobalHapticListener />
         {children}
       </body>
     </html>
