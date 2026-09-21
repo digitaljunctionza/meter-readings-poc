@@ -1,0 +1,303 @@
+import type { ReadingRow } from "@/components/ReadingsTable";
+import type { Service } from "@/lib/types";
+import type { StatusTone } from "@/lib/flagDisplay";
+
+// ---------------------------------------------------------------- dates
+// Everything a client sees is in South African time, formatted explicitly.
+// The dashboard renders on the server (UTC) and again in the browser (SAST);
+// relying on the runtime's local zone would make those two disagree.
+
+const SA_TZ = "Africa/Johannesburg";
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS_LONG = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const partsFormat = new Intl.DateTimeFormat("en-GB", {
+  timeZone: SA_TZ,
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+  hourCycle: "h23",
+});
+
+function saParts(iso: string) {
+  const p: Record<string, string> = {};
+  for (const part of partsFormat.formatToParts(new Date(iso))) p[part.type] = part.value;
+  return {
+    year: Number(p.year),
+    month: Number(p.month),
+    day: Number(p.day),
+    hour: Number(p.hour),
+    minute: Number(p.minute),
+  };
+}
+
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** "12 Sep 2026" */
+export function formatDay(iso: string): string {
+  const { day, month, year } = saParts(iso);
+  return `${day} ${MONTHS[month - 1]} ${year}`;
+}
+
+/** "12 Sep 2026, 13:54" */
+export function formatDayTime(iso: string): string {
+  const { hour, minute } = saParts(iso);
+  return `${formatDay(iso)}, ${pad2(hour)}:${pad2(minute)}`;
+}
+
+/** "2026-09" */
+export function monthKey(iso: string): string {
+  const { year, month } = saParts(iso);
+  return `${year}-${pad2(month)}`;
+}
+
+/** "September 2026" */
+export function monthLabel(key: string): string {
+  const [y, m] = key.split("-").map(Number);
+  return `${MONTHS_LONG[m - 1]} ${y}`;
+}
+
+/** "September" */
+export function monthName(key: string): string {
+  return MONTHS_LONG[Number(key.slice(5, 7)) - 1];
+}
+
+/** "Sep" */
+export function monthShort(key: string): string {
+  return MONTHS[Number(key.slice(5, 7)) - 1];
+}
+
+export function shiftMonthKey(key: string, delta: number): string {
+  const [y, m] = key.split("-").map(Number);
+  const index = y * 12 + (m - 1) + delta;
+  return `${Math.floor(index / 12)}-${pad2((index % 12) + 1)}`;
+}
+
+/** Today's date in South African time, "2026-09-21". */
+export function todaySA(): string {
+  const { year, month, day } = saParts(new Date().toISOString());
+  return `${year}-${pad2(month)}-${pad2(day)}`;
+}
+
+// -------------------------------------------------------------- services
+
+export const SERVICE_UNIT: Record<Service, string> = { electricity: "kWh", water: "kl" };
+export const SERVICE_LABEL: Record<Service, string> = { electricity: "Electricity", water: "Water" };
+export const SERVICE_COLOR: Record<Service, string> = { electricity: "#d97706", water: "#2563eb" };
+
+export function isService(value: string): value is Service {
+  return value === "electricity" || value === "water";
+}
+
+export function formatNumber(n: number): string {
+  return n.toLocaleString("en-US");
+}
+
+/** "Unit 101" for numbered units, the meter's own name ("Main Water Meter") otherwise. */
+export function unitTitle(unitNumber: string): string {
+  return /^\d/.test(unitNumber) ? `Unit ${unitNumber}` : unitNumber;
+}
+
+// --------------------------------------------------------------- status
+
+export interface ClientStatus {
+  label: string;
+  tone: StatusTone;
+  /** A full sentence for the detail view; absent for a normal reading. */
+  detail?: string;
+}
+
+const OPEN_DETAIL = {
+  below_prev:
+    "This reading is lower than the previous one. We're checking it against the meter photo and will confirm it.",
+  above_2x_avg:
+    "This reading is higher than usual for this meter. We're checking it against the meter photo and will confirm it.",
+  possible_partial: "This reading may not have been captured in full. We're confirming it.",
+} as const;
+
+const PAST_LABEL = {
+  below_prev: "Lower than previous",
+  above_2x_avg: "Higher than usual",
+  possible_partial: "Partial entry",
+} as const;
+
+/**
+ * Plain-language status for a client. `openIssue` is true only for a meter's
+ * latest reading that is still flagged and hasn't been checked yet — those are
+ * the ones we are actively looking at; older flags are history.
+ */
+export function clientStatus(
+  row: Pick<ReadingRow, "flag_status" | "reviewed">,
+  openIssue: boolean
+): ClientStatus {
+  if (row.flag_status === "ok") return { label: "Normal", tone: "good" };
+  if (row.reviewed) {
+    return {
+      label: "Verified",
+      tone: "good",
+      detail: "This reading looked unusual when it was captured and has since been checked.",
+    };
+  }
+  if (openIssue) {
+    return { label: "Being checked", tone: "watch", detail: OPEN_DETAIL[row.flag_status] };
+  }
+  return {
+    label: PAST_LABEL[row.flag_status],
+    tone: "neutral",
+    detail: "This reading looked unusual compared with this meter's history.",
+  };
+}
+
+/** Ids of each meter's latest reading that is still flagged and unchecked. */
+export function openIssueIds(rows: ReadingRow[]): Set<string> {
+  const newestFirst = [...rows].sort((a, b) => b.captured_at.localeCompare(a.captured_at));
+  const seen = new Set<string>();
+  const open = new Set<string>();
+  for (const r of newestFirst) {
+    if (r.kind === "replacement" || seen.has(r.meter_id)) continue;
+    seen.add(r.meter_id);
+    if (r.flag_status !== "ok" && !r.reviewed) open.add(r.id);
+  }
+  return open;
+}
+
+// -------------------------------------------------------------- summaries
+
+export interface MonthTotal {
+  key: string;
+  usage: number;
+  readings: number;
+}
+
+export interface ServiceSummary {
+  service: Service;
+  months: MonthTotal[];
+  latest: MonthTotal | null;
+  previous: MonthTotal | null;
+  /** Whole-number % change vs the previous month; null when it can't be compared fairly. */
+  changePct: number | null;
+  /** The latest month has far fewer readings than the one before — a round still under way. */
+  inProgress: boolean;
+  /** Mean usage of the completed months before the latest one — a "usual" month. */
+  typical: number | null;
+  /** Latest ÷ typical. 1 means a completely ordinary month. */
+  ratio: number | null;
+}
+
+export function buildServiceSummary(rows: ReadingRow[], service: Service): ServiceSummary {
+  const byMonth = new Map<string, MonthTotal>();
+  for (const r of rows) {
+    if (r.kind === "replacement" || r.service !== service) continue;
+    // A first reading has no usage yet, and a lower-than-previous one isn't real consumption.
+    if (r.usage === null || r.usage < 0) continue;
+    const key = monthKey(r.captured_at);
+    const entry = byMonth.get(key) ?? { key, usage: 0, readings: 0 };
+    entry.usage += r.usage;
+    entry.readings += 1;
+    byMonth.set(key, entry);
+  }
+  const months = [...byMonth.values()].sort((a, b) => a.key.localeCompare(b.key));
+  const latest = months.length > 0 ? months[months.length - 1] : null;
+  const previous = latest ? (byMonth.get(shiftMonthKey(latest.key, -1)) ?? null) : null;
+
+  // Comparing a half-read month with a fully read one would look like a collapse in usage.
+  const inProgress = !!(latest && previous && latest.readings < previous.readings * 0.8);
+  const changePct =
+    latest && previous && !inProgress && previous.usage > 0
+      ? Math.round(((latest.usage - previous.usage) / previous.usage) * 100)
+      : null;
+
+  // A usual month, averaged over the six before this one. Comparing against a
+  // run of months rather than just last month stops one odd month (a leak, a
+  // cold snap) from redefining what "normal" looks like.
+  const priorMonths = months.slice(0, -1).slice(-6);
+  const typical =
+    priorMonths.length > 0 ? priorMonths.reduce((sum, m) => sum + m.usage, 0) / priorMonths.length : null;
+  const ratio = latest && typical && typical > 0 && !inProgress ? latest.usage / typical : null;
+
+  return { service, months, latest, previous, changePct, inProgress, typical, ratio };
+}
+
+// --------------------------------------------------------------- filtering
+
+export type PeriodKey = "latest" | "3m" | "6m" | "all";
+export type SortKey = "newest" | "unit";
+
+export const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
+  { key: "latest", label: "Latest month" },
+  { key: "3m", label: "Last 3 months" },
+  { key: "6m", label: "Last 6 months" },
+  { key: "all", label: "All readings" },
+];
+
+/** The most recent month that has a reading, across every service. */
+export function latestMonthKey(rows: ReadingRow[]): string | null {
+  let latest: string | null = null;
+  for (const r of rows) {
+    if (r.kind === "replacement") continue;
+    const key = monthKey(r.captured_at);
+    if (latest === null || key > latest) latest = key;
+  }
+  return latest;
+}
+
+export function periodLabel(period: PeriodKey, latestKey: string | null): string {
+  if (!latestKey || period === "all") return "All readings";
+  if (period === "latest") return monthLabel(latestKey);
+  const span = period === "3m" ? 2 : 5;
+  const start = shiftMonthKey(latestKey, -span);
+  return `${monthShort(start)} ${start.slice(0, 4)} to ${monthShort(latestKey)} ${latestKey.slice(0, 4)}`;
+}
+
+function periodStart(period: PeriodKey, latestKey: string | null): string | null {
+  if (!latestKey) return null;
+  if (period === "latest") return latestKey;
+  if (period === "3m") return shiftMonthKey(latestKey, -2);
+  if (period === "6m") return shiftMonthKey(latestKey, -5);
+  return null;
+}
+
+function compareUnits(a: string, b: string): number {
+  const na = Number.parseFloat(a);
+  const nb = Number.parseFloat(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb) && na !== nb) return na - nb;
+  return a.localeCompare(b, undefined, { numeric: true });
+}
+
+export function filterReadings(
+  rows: ReadingRow[],
+  opts: {
+    query: string;
+    service: Service | "all";
+    period: PeriodKey;
+    sort: SortKey;
+    latestKey: string | null;
+  }
+): ReadingRow[] {
+  const query = opts.query.trim().toLowerCase();
+  const start = periodStart(opts.period, opts.latestKey);
+
+  const matches = rows.filter((r) => {
+    if (r.kind === "replacement") return false;
+    if (opts.service !== "all" && r.service !== opts.service) return false;
+    if (start && monthKey(r.captured_at) < start) return false;
+    if (query && !r.unit_number.toLowerCase().includes(query) && !r.meter_label.toLowerCase().includes(query)) {
+      return false;
+    }
+    return true;
+  });
+
+  matches.sort((a, b) => {
+    if (opts.sort === "unit") {
+      const byUnit = compareUnits(a.unit_number, b.unit_number);
+      if (byUnit !== 0) return byUnit;
+    }
+    return b.captured_at.localeCompare(a.captured_at);
+  });
+  return matches;
+}

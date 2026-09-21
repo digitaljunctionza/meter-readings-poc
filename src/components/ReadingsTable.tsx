@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { formatDateTime } from "@/lib/date";
-import { Modal } from "@/components/Modal";
+import { ReadingDetailModal } from "@/components/ReadingDetailModal";
+import { ADMIN_FLAG_LABEL as FLAG_LABEL, FLAG_CLASS, FLAG_DOT_CLASS } from "@/lib/flagDisplay";
 import type { FlagStatus } from "@/lib/types";
 import { SearchIcon } from "@/components/icons";
 
@@ -19,6 +20,8 @@ export interface ReadingRow {
   previous_value: number | null;
   usage: number | null;
   flag_status: FlagStatus;
+  /** An admin has looked at this reading (accepted or corrected it). */
+  reviewed?: boolean;
   photo_url: string | null;
   notes: string | null;
   /** kind: "replacement" only — old/new meter identifiers for the marker copy. */
@@ -29,27 +32,6 @@ export interface ReadingRow {
     openingValue: number;
   };
 }
-
-const FLAG_LABEL: Record<FlagStatus, string> = {
-  ok: "OK",
-  below_prev: "Below previous",
-  above_2x_avg: "Above 2x average",
-  possible_partial: "Possible partial entry",
-};
-
-const FLAG_CLASS: Record<FlagStatus, string> = {
-  ok: "border-green-200 text-green-700",
-  below_prev: "border-red-200 text-red-700",
-  above_2x_avg: "border-orange-200 text-orange-700",
-  possible_partial: "border-accent-light text-accent",
-};
-
-const FLAG_DOT_CLASS: Record<FlagStatus, string> = {
-  ok: "bg-green-500",
-  below_prev: "bg-red-500",
-  above_2x_avg: "bg-orange-500",
-  possible_partial: "bg-accent",
-};
 
 type SortKey = "date" | "unit";
 type SortDir = "asc" | "desc";
@@ -248,75 +230,7 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
       </div>
 
       {openReading && (
-        <Modal
-          title={`${openReading.unit_number} · ${openReading.service}`}
-          onClose={() => setOpenId(null)}
-        >
-          <div className="flex flex-col gap-4">
-            {openReading.photo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={openReading.photo_url}
-                alt="Meter photo"
-                className="max-h-[50vh] w-full rounded-xl border border-slate-200 object-contain bg-slate-50"
-              />
-            ) : (
-              <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-400">
-                No photo attached
-              </div>
-            )}
-
-            <span
-              className={`inline-flex w-fit items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 text-xs font-medium ${FLAG_CLASS[openReading.flag_status]}`}
-            >
-              <span
-                className={`h-1.5 w-1.5 shrink-0 rounded-full ${FLAG_DOT_CLASS[openReading.flag_status]}`}
-                aria-hidden="true"
-              />
-              {FLAG_LABEL[openReading.flag_status]}
-            </span>
-
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-              <div>
-                <dt className="text-xs text-slate-500">Captured</dt>
-                <dd className="font-medium text-slate-900">{formatDateTime(openReading.captured_at)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500">Reading</dt>
-                <dd className="font-mono font-semibold tabular-nums text-slate-900">
-                  {openReading.reading_value.toLocaleString("en-US")}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500">Previous</dt>
-                <dd className="font-mono tabular-nums text-slate-700">
-                  {openReading.previous_value !== null ? openReading.previous_value.toLocaleString("en-US") : "—"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-slate-500">Usage</dt>
-                <dd className="font-mono tabular-nums text-slate-700">
-                  {openReading.usage !== null ? openReading.usage.toLocaleString("en-US") : "—"}
-                </dd>
-              </div>
-            </dl>
-
-            {openReading.notes && (
-              <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">{openReading.notes}</p>
-            )}
-
-            {openReading.photo_url && (
-              <a
-                href={openReading.photo_url}
-                target="_blank"
-                rel="noreferrer"
-                className="w-fit text-sm font-medium text-accent underline decoration-accent-light underline-offset-2 hover:decoration-accent"
-              >
-                Open full-size photo in a new tab
-              </a>
-            )}
-          </div>
-        </Modal>
+        <ReadingDetailModal row={openReading} onClose={() => setOpenId(null)} audience="admin" />
       )}
     </div>
   );

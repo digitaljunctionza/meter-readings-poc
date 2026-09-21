@@ -66,6 +66,7 @@ export async function buildReportRows(
       previous_value: previous,
       usage: previous !== null ? r.reading_value - previous : null,
       flag_status: r.flag_status,
+      reviewed: !!r.reviewed_at,
       photo_url: r.photo_url,
       notes: r.notes,
     };

@@ -118,6 +118,14 @@ body {
   }
 }
 
+/* The gauge arc draws itself in on load. stroke-dasharray is set on the
+   element so this only needs to run the offset back to zero. */
+@keyframes gauge-sweep {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 @keyframes splash-fade {
   0%,
   55% {
