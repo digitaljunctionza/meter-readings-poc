@@ -1,32 +1,14 @@
+import { ARC_START, ARC_SWEEP, arcPath as arc, dialTicks, polarPoint } from "@/components/charts/arcGeometry";
+
 const SIZE = 124;
 const CENTER = SIZE / 2;
 const RADIUS = 47;
 const STROKE = 9;
-const START = 150; // lower-left, sweeping clockwise over the top
-const SWEEP = 240;
 /** Full-scale is twice a usual month, so "usual" sits dead centre on the dial. */
 const SCALE_MAX = 2;
 
-/**
- * Coordinates are rounded to 2dp because Math.cos/sin can disagree in the
- * final float digit between Node and the browser — enough to trip React's
- * hydration check on every tick mark.
- */
-function polar(r: number, deg: number) {
-  const rad = (deg * Math.PI) / 180;
-  return {
-    x: Math.round((CENTER + r * Math.cos(rad)) * 100) / 100,
-    y: Math.round((CENTER + r * Math.sin(rad)) * 100) / 100,
-  };
-}
-
-function arcPath(r: number, fromT: number, toT: number): string {
-  const a0 = START + SWEEP * fromT;
-  const a1 = START + SWEEP * toT;
-  const p0 = polar(r, a0);
-  const p1 = polar(r, a1);
-  return `M ${p0.x} ${p0.y} A ${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${p1.x} ${p1.y}`;
-}
+const polar = (r: number, deg: number) => polarPoint(CENTER, CENTER, r, deg);
+const arcPath = (r: number, fromT: number, toT: number) => arc(CENTER, CENTER, r, fromT, toT);
 
 export type GaugeTone = "low" | "normal" | "high" | "veryHigh";
 
@@ -66,7 +48,7 @@ export function ArcGauge({
   const t = clamped / SCALE_MAX;
   const tone = TONE[gaugeTone(ratio)];
   const pinned = ratio > SCALE_MAX;
-  const needle = polar(RADIUS - 15, START + SWEEP * t);
+  const needle = polar(RADIUS - 15, ARC_START + ARC_SWEEP * t);
   const gradientId = `gauge-${tone.from.slice(1)}`;
 
   return (
@@ -85,23 +67,18 @@ export function ArcGauge({
         </defs>
 
         {/* Dial ticks — denser marks read as a measuring instrument, not a progress bar. */}
-        {Array.from({ length: 25 }, (_, i) => {
-          const major = i % 6 === 0;
-          const p1 = polar(RADIUS + 7, START + SWEEP * (i / 24));
-          const p2 = polar(RADIUS + (major ? 12 : 10), START + SWEEP * (i / 24));
-          return (
-            <line
-              key={i}
-              x1={p1.x}
-              y1={p1.y}
-              x2={p2.x}
-              y2={p2.y}
-              stroke={major ? "#94a3b8" : "#cbd5e1"}
-              strokeWidth={major ? 1.6 : 1}
-              strokeLinecap="round"
-            />
-          );
-        })}
+        {dialTicks(CENTER, CENTER, RADIUS).map((t, i) => (
+          <line
+            key={i}
+            x1={t.x1}
+            y1={t.y1}
+            x2={t.x2}
+            y2={t.y2}
+            stroke={t.major ? "#94a3b8" : "#cbd5e1"}
+            strokeWidth={t.major ? 1.6 : 1}
+            strokeLinecap="round"
+          />
+        ))}
 
         <path d={arcPath(RADIUS, 0, 1)} fill="none" stroke="#e8edf4" strokeWidth={STROKE} strokeLinecap="round" />
 
@@ -116,10 +93,10 @@ export function ArcGauge({
 
         {/* The "usual month" mark at mid-dial, which is what the needle is read against. */}
         <line
-          x1={polar(RADIUS - STROKE / 2 - 1, START + SWEEP * 0.5).x}
-          y1={polar(RADIUS - STROKE / 2 - 1, START + SWEEP * 0.5).y}
-          x2={polar(RADIUS + STROKE / 2 + 1, START + SWEEP * 0.5).x}
-          y2={polar(RADIUS + STROKE / 2 + 1, START + SWEEP * 0.5).y}
+          x1={polar(RADIUS - STROKE / 2 - 1, ARC_START + ARC_SWEEP * 0.5).x}
+          y1={polar(RADIUS - STROKE / 2 - 1, ARC_START + ARC_SWEEP * 0.5).y}
+          x2={polar(RADIUS + STROKE / 2 + 1, ARC_START + ARC_SWEEP * 0.5).x}
+          y2={polar(RADIUS + STROKE / 2 + 1, ARC_START + ARC_SWEEP * 0.5).y}
           stroke="#0c1f3d"
           strokeWidth={2}
           strokeLinecap="round"

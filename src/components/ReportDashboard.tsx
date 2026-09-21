@@ -5,9 +5,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -15,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { BarGradient, ChartTooltip, compactNumber } from "@/components/charts/chartBits";
+import { StatusArc } from "@/components/charts/StatusArc";
 import { BoltIcon, DropletIcon } from "@/components/icons";
 import { ADMIN_FLAG_LABEL as FLAG_LABEL } from "@/lib/flagDisplay";
 import { monthLabel, monthKey, monthShort } from "@/lib/clientReport";
@@ -57,9 +55,11 @@ function implausibleReadings(rows: ReadingRow[]): ReadingRow[] {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">{title}</p>
-      {children}
+      {/* Grid rows stretch to the tallest panel, so centre the contents rather
+          than leaving the shorter one top-heavy with dead space beneath. */}
+      <div className="flex flex-1 flex-col justify-center">{children}</div>
     </div>
   );
 }
@@ -116,33 +116,20 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Panel title="Reading status breakdown">
-          <div className="flex items-center gap-4">
-            <div className="relative h-40 w-40 shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    innerRadius={48}
-                    outerRadius={68}
-                    paddingAngle={pieData.length > 1 ? 3 : 0}
-                    cornerRadius={4}
-                    stroke="none"
-                  >
-                    {pieData.map((entry) => (
-                      <Cell key={entry.status} fill={FLAG_COLOR[entry.status]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<ChartTooltip suffix="readings" />} />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* The number people actually want from this chart, in the hole. */}
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <span className="font-mono text-2xl font-extrabold tabular-nums text-navy-900">{okPct}%</span>
-                <span className="text-[10px] font-semibold tracking-wide text-slate-500 uppercase">OK</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+            <StatusArc
+              segments={pieData.map((entry) => ({
+                key: entry.status,
+                label: entry.name,
+                value: entry.value,
+                color: FLAG_COLOR[entry.status],
+              }))}
+              centerValue={`${okPct}%`}
+              centerLabel="OK"
+              ariaLabel={`${okPct}% of ${meta.label.toLowerCase()} readings are OK. ${pieData
+                .map((e) => `${e.name}: ${e.value}`)
+                .join(". ")}.`}
+            />
 
             <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
               {pieData.map((entry) => (
