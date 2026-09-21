@@ -1,18 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import {
   Bar,
   BarChart,
+  CartesianGrid,
   Cell,
-  LabelList,
   Pie,
   PieChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
+  YAxis,
 } from "recharts";
-import { BarGradient, ChartTooltip } from "@/components/charts/chartBits";
+import { BarGradient, ChartTooltip, compactNumber } from "@/components/charts/chartBits";
 import { BoltIcon, DropletIcon } from "@/components/icons";
 import { ADMIN_FLAG_LABEL as FLAG_LABEL } from "@/lib/flagDisplay";
 import { monthLabel, monthKey, monthShort } from "@/lib/clientReport";
@@ -33,6 +35,25 @@ const SERVICE_META: Record<
   electricity: { label: "Electricity", color: "#d97706", softBg: "bg-amber-50", unit: "kWh", Icon: BoltIcon },
   water: { label: "Water", color: "#2563eb", softBg: "bg-blue-50", unit: "kl", Icon: DropletIcon },
 };
+
+/**
+ * Readings whose usage is wildly out of line with the median for this
+ * service — the signature of a reading typed with an extra digit, which
+ * inflates a whole month's total on its own. Compared against the median
+ * rather than the mean so the outliers don't drag the yardstick up with them.
+ */
+function implausibleReadings(rows: ReadingRow[]): ReadingRow[] {
+  const usages = rows
+    .map((r) => r.usage)
+    .filter((u): u is number => u !== null && u > 0)
+    .sort((a, b) => a - b);
+  if (usages.length < 6) return [];
+  const median = usages[Math.floor(usages.length / 2)];
+  if (median <= 0) return [];
+  return rows
+    .filter((r) => r.usage !== null && r.usage > median * 50)
+    .sort((a, b) => (b.usage ?? 0) - (a.usage ?? 0));
+}
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -72,6 +93,7 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
   const okPct = rows.length > 0 ? Math.round((flagCounts.ok / rows.length) * 100) : 0;
   const average =
     trendData.length > 1 ? trendData.reduce((sum, d) => sum + d.usage, 0) / trendData.length : null;
+  const suspect = implausibleReadings(rows);
   const gradientId = `admin-bar-${service}`;
 
   return (
@@ -141,16 +163,26 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
         <Panel title="Monthly usage">
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trendData} margin={{ top: 18, right: 4, bottom: 0, left: 4 }}>
+              <BarChart data={trendData} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
                 <defs>
                   <BarGradient id={gradientId} color={meta.color} />
                 </defs>
+                <CartesianGrid vertical={false} stroke="#eef2f7" />
                 <XAxis
                   dataKey="label"
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 11, fill: "#64748b" }}
                   dy={2}
+                />
+                {/* An explicit axis, so a month inflated by a mistyped reading is
+                    visible as an outlier instead of silently rescaling the rest. */}
+                <YAxis
+                  width={46}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 10, fill: "#94a3b8" }}
+                  tickFormatter={compactNumber}
                 />
                 {average !== null && (
                   <ReferenceLine y={Math.round(average)} stroke="#94a3b8" strokeDasharray="4 4" strokeWidth={1.2} />
@@ -167,17 +199,33 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
                     />
                   }
                 />
-                <Bar dataKey="usage" radius={[7, 7, 3, 3]} maxBarSize={56} fill={`url(#${gradientId})`}>
-                  <LabelList
-                    dataKey="usage"
-                    position="top"
-                    formatter={(v: unknown) => Number(v).toLocaleString("en-US")}
-                    style={{ fontSize: 10, fontWeight: 600, fill: "#475569" }}
-                  />
-                </Bar>
+                <Bar dataKey="usage" radius={[7, 7, 3, 3]} maxBarSize={56} fill={`url(#${gradientId})`} />
               </BarChart>
             </ResponsiveContainer>
           </div>
+          {suspect.length > 0 && (
+            <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11.5px] leading-relaxed text-amber-900">
+              <p>
+                <b className="font-bold">
+                  {suspect.length} reading{suspect.length === 1 ? "" : "s"} look
+                  {suspect.length === 1 ? "s" : ""} mistyped
+                </b>{" "}
+                — far larger than this property&apos;s usual usage, which is what inflates the months above.
+              </p>
+              <ul className="mt-1 flex flex-col gap-0.5">
+                {suspect.slice(0, 3).map((r) => (
+                  <li key={r.id} className="font-mono tabular-nums">
+                    Unit {r.unit_number} · {monthLabel(monthKey(r.captured_at))} ·{" "}
+                    {Number(r.usage).toLocaleString("en-US")} {meta.unit}
+                  </li>
+                ))}
+                {suspect.length > 3 && <li>+{suspect.length - 3} more</li>}
+              </ul>
+              <Link href="/admin/review" className="mt-1 inline-block font-semibold underline">
+                Correct them in the review queue
+              </Link>
+            </div>
+          )}
         </Panel>
       </div>
     </div>

@@ -1,3 +1,11 @@
+/** Axis ticks: 1,250,000 → "1.25M". Keeps a big-number axis to a few characters. */
+export function compactNumber(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${Number((n / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1))}M`;
+  if (abs >= 1_000) return `${Number((n / 1_000).toFixed(abs >= 10_000 ? 0 : 1))}k`;
+  return String(Math.round(n));
+}
+
 /** Vertical fade used to fill bars — full colour at the top, airy at the base. */
 export function BarGradient({ id, color }: { id: string; color: string }) {
   return (

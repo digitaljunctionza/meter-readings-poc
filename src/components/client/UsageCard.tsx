@@ -3,6 +3,7 @@
 import {
   Bar,
   BarChart,
+  CartesianGrid,
   Cell,
   LabelList,
   ReferenceLine,
@@ -11,7 +12,7 @@ import {
   XAxis,
 } from "recharts";
 import { ArcGauge } from "@/components/charts/ArcGauge";
-import { BarGradient, ChartTooltip } from "@/components/charts/chartBits";
+import { BarGradient, ChartTooltip, compactNumber } from "@/components/charts/chartBits";
 import { RegisterDigits } from "@/components/client/RegisterDigits";
 import { BoltIcon, DropletIcon } from "@/components/icons";
 import {
@@ -25,10 +26,9 @@ import {
   type ServiceSummary,
 } from "@/lib/clientReport";
 
-function compact(n: number): string {
-  if (n >= 100000) return `${Math.round(n / 1000)}k`;
-  if (n >= 10000) return `${(n / 1000).toFixed(1)}k`;
-  return formatNumber(n);
+/** Bar labels stay exact where they fit — "1,441" beats "1.4k" when there's room. */
+function barLabel(n: number): string {
+  return n >= 100_000 ? compactNumber(n) : formatNumber(n);
 }
 
 function changeLine(s: ServiceSummary): { text: string; className: string } | null {
@@ -125,6 +125,7 @@ export function UsageCard({ summary }: { summary: ServiceSummary }) {
                 <defs>
                   <BarGradient id={gradientId} color={color} />
                 </defs>
+                <CartesianGrid vertical={false} stroke="#f1f5f9" />
                 <XAxis
                   dataKey="label"
                   tickLine={false}
@@ -155,7 +156,7 @@ export function UsageCard({ summary }: { summary: ServiceSummary }) {
                   <LabelList
                     dataKey="usage"
                     position="top"
-                    formatter={(v: unknown) => compact(Number(v))}
+                    formatter={(v: unknown) => barLabel(Number(v))}
                     style={{ fontSize: 10, fontWeight: 600, fill: "#475569" }}
                   />
                 </Bar>
