@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
 import { ReviewQueueList, type ReviewItem } from "@/components/ReviewQueueList";
+import { trailingAverageUsage } from "@/lib/flagging";
 import { BottomNav } from "@/components/BottomNav";
 import type { Meter, MeterReading, Property, Unit } from "@/lib/types";
 
@@ -34,32 +35,46 @@ export default async function ReviewQueuePage() {
         .order("captured_at", { ascending: false })
     : { data: [] };
 
+  // Every reading for each meter, newest first. The queue used to keep only
+  // the newest one per meter, so a flagged reading vanished from here the
+  // moment the next month's round landed — still wrong, still skewing every
+  // report, but no longer visible anywhere in the app.
   const readingsByMeter = new Map<string, MeterReading[]>();
   for (const r of (readingRows ?? []) as MeterReading[]) {
     const list = readingsByMeter.get(r.meter_id) ?? [];
-    if (list.length < 2) list.push(r);
+    list.push(r);
     readingsByMeter.set(r.meter_id, list);
   }
 
   const items: ReviewItem[] = [];
   for (const m of meters) {
-    const [latest, previous] = readingsByMeter.get(m.id) ?? [];
-    if (!latest || latest.flag_status === "ok" || latest.reviewed_at) continue;
+    const history = readingsByMeter.get(m.id) ?? [];
     const property = propertyById.get(m.property_id);
-    items.push({
-      readingId: latest.id,
-      propertyName: property?.name ?? "—",
-      unitNumber: m.unit_id ? unitById.get(m.unit_id)?.unit_number ?? m.label : m.label,
-      service: m.service,
-      flagStatus: latest.flag_status,
-      readingValue: latest.reading_value,
-      previousValue: previous?.reading_value ?? null,
-      capturedAt: latest.captured_at,
-      photoUrl: latest.photo_url,
-      notes: latest.notes,
+    const unitNumber = m.unit_id ? (unitById.get(m.unit_id)?.unit_number ?? m.label) : m.label;
+
+    history.forEach((reading, i) => {
+      if (reading.flag_status === "ok" || reading.reviewed_at) return;
+      const previous = history[i + 1] ?? null;
+      // Judge each reading against the history it had at the time, not the
+      // meter's whole life, so a later spike doesn't excuse an earlier one.
+      const trailingAverage = trailingAverageUsage(history.slice(i + 1).map((r) => r.reading_value));
+
+      items.push({
+        readingId: reading.id,
+        propertyName: property?.name ?? "—",
+        unitNumber,
+        service: m.service,
+        flagStatus: reading.flag_status,
+        readingValue: reading.reading_value,
+        previousValue: previous?.reading_value ?? null,
+        usage: previous ? reading.reading_value - previous.reading_value : null,
+        trailingAverage,
+        capturedAt: reading.captured_at,
+        photoUrl: reading.photo_url,
+        notes: reading.notes,
+      });
     });
   }
-  items.sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-app-bg pb-24">

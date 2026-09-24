@@ -39,14 +39,14 @@ export function buildReportEmailHtml(params: {
   const tableRows = rows
     .map((r) => {
       const isReplacement = r.kind === "replacement";
-      const usage = r.usage !== null ? r.usage.toLocaleString() : "—";
+      const usage = r.usage !== null ? r.usage.toLocaleString("en-US") : "—";
       return `
         <tr>
           <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#374151;white-space:nowrap;">${formatDate(r.captured_at)}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#374151;">${escapeHtml(r.unit_number)}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#374151;text-transform:capitalize;">${escapeHtml(r.service)}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#0c1f3d;font-weight:600;text-align:right;">${
-            isReplacement ? "Meter replaced" : r.reading_value.toLocaleString()
+            isReplacement ? "Meter replaced" : r.reading_value.toLocaleString("en-US")
           }</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:13px;color:#374151;text-align:right;">${isReplacement ? "—" : usage}</td>
           <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px;color:${FLAG_COLOR[r.flag_status]};font-weight:600;">${

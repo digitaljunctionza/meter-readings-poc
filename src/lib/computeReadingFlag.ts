@@ -1,61 +1,44 @@
 import { createClient } from "@/lib/supabase/server";
-import { computeFlagStatus } from "@/lib/flagging";
+import { computeFlagStatus, trailingAverageUsage } from "@/lib/flagging";
 import type { FlagStatus, Meter, MeterReading } from "@/lib/types";
 
+/** How many of a meter's prior readings feed the trailing average. */
+const HISTORY_DEPTH = 7;
+
 /**
- * The DB lookups computeFlagStatus needs — the previous reading for this
- * meter, and recent readings across sibling meters of the same service —
- * shared by new-reading capture (/api/readings) and correcting an
- * already-captured one from the review queue, so both flag consistently.
+ * Loads the history computeFlagStatus needs — this meter's own recent
+ * readings — and flags a value against it. Shared by new-reading capture
+ * (/api/readings) and correcting an already-captured one from the review
+ * queue, so both judge a reading the same way.
  */
 export async function computeFlagStatusForReading(params: {
   meter: Meter;
   rawValue: string;
   value: number;
   cutoff: string;
-  /** Exclude this reading's own row from the lookups — needed when editing a
-   * reading already in the table, so it doesn't count as its own "previous". */
+  /** Exclude this reading's own row from the lookup — needed when editing a
+   * reading already in the table, so it doesn't count as its own history. */
   excludeReadingId?: string;
 }): Promise<FlagStatus> {
   const { meter, rawValue, value, cutoff, excludeReadingId } = params;
   const supabase = await createClient();
 
-  const { data: prevRows, error: prevError } = await supabase
+  const { data: historyRows, error } = await supabase
     .from("meter_readings")
     .select("*")
     .eq("meter_id", meter.id)
     .lte("captured_at", cutoff)
     .order("captured_at", { ascending: false })
-    .limit(excludeReadingId ? 2 : 1);
-  if (prevError) throw new Error(prevError.message);
-  const previousReadingForMeter =
-    ((prevRows ?? []) as MeterReading[]).find((r) => r.id !== excludeReadingId) ?? null;
+    .limit(HISTORY_DEPTH + 1);
+  if (error) throw new Error(error.message);
 
-  const { data: siblingMeterRows, error: siblingError } = await supabase
-    .from("meters")
-    .select("id")
-    .eq("property_id", meter.property_id)
-    .eq("service", meter.service);
-  if (siblingError) throw new Error(siblingError.message);
-  const siblingMeterIds = (siblingMeterRows ?? []).map((m) => m.id as string);
-
-  const { data: recentRows, error: recentError } = await supabase
-    .from("meter_readings")
-    .select("*")
-    .in("meter_id", siblingMeterIds.length > 0 ? siblingMeterIds : [meter.id])
-    .lte("captured_at", cutoff)
-    .order("captured_at", { ascending: false })
-    .limit(51);
-  if (recentError) throw new Error(recentError.message);
-  const recentReadingsForServiceAcrossProperty = ((recentRows ?? []) as MeterReading[]).filter(
-    (r) => r.id !== excludeReadingId
-  );
+  const history = ((historyRows ?? []) as MeterReading[]).filter((r) => r.id !== excludeReadingId);
+  const previousValueForMeter = history.length > 0 ? history[0].reading_value : null;
 
   return computeFlagStatus({
     rawValue,
     value,
-    service: meter.service,
-    previousReadingForMeter,
-    recentReadingsForServiceAcrossProperty,
+    previousValueForMeter,
+    trailingAverageForMeter: trailingAverageUsage(history.map((r) => r.reading_value)),
   });
 }

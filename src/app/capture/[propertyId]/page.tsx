@@ -243,8 +243,8 @@ export default async function CaptureRouteListPage({
                     </p>
                   ) : isReadThisRound ? (
                     <p className="truncate font-mono text-[11px] font-medium text-green-700 tabular-nums">
-                      {r.latest!.reading_value.toLocaleString()}
-                      {usage !== null ? ` · ${usage >= 0 ? "+" : ""}${usage.toLocaleString()}` : ""}
+                      {r.latest!.reading_value.toLocaleString("en-US")}
+                      {usage !== null ? ` · ${usage >= 0 ? "+" : ""}${usage.toLocaleString("en-US")}` : ""}
                     </p>
                   ) : (
                     <p className="truncate text-[11px] text-text-muted">

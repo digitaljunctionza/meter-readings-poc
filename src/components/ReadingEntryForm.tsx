@@ -309,7 +309,7 @@ export function ReadingEntryForm({
           <div className="flex items-center justify-between border-t border-border pt-2.5">
             <span className="text-xs text-text-muted">
               {previousValue !== null
-                ? `Last ${previousValue.toLocaleString()}${previousCapturedAt ? ` on ${formatDate(previousCapturedAt)}` : ""}`
+                ? `Last ${previousValue.toLocaleString("en-US")}${previousCapturedAt ? ` on ${formatDate(previousCapturedAt)}` : ""}`
                 : "No previous reading"}
             </span>
             <span className={`font-mono text-[13px] font-semibold tabular-nums ${deltaColorClass}`}>{delta}</span>

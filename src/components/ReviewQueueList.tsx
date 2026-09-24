@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { acceptReading, editReading } from "@/app/admin/review/actions";
 import { createClient } from "@/lib/supabase/browser";
 import { formatDateTime } from "@/lib/date";
 import { haptic } from "@/lib/haptics";
+import { BAND_META, BAND_ORDER, triageReading, type TriageBand } from "@/lib/triage";
 import type { FlagStatus, Service } from "@/lib/types";
 
 export interface ReviewItem {
@@ -16,16 +17,14 @@ export interface ReviewItem {
   flagStatus: FlagStatus;
   readingValue: number;
   previousValue: number | null;
+  /** Consumption since the previous reading; null for a meter's first. */
+  usage: number | null;
+  /** This meter's own average consumption before this reading. */
+  trailingAverage: number | null;
   capturedAt: string;
   photoUrl: string | null;
   notes: string | null;
 }
-
-const REASON_COPY: Partial<Record<FlagStatus, string>> = {
-  below_prev: "Reading came in below last month",
-  above_2x_avg: "Well above this meter's own average",
-  possible_partial: "Reading looks like an incomplete entry",
-};
 
 // Module-level, not a component-body closure: Date.now() here is an event
 // callback's concern, not render's, but the purity lint can't tell the two
@@ -54,6 +53,11 @@ export function ReviewQueueList({ items }: { items: ReviewItem[] }) {
   const [editError, setEditError] = useState<string | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [openBands, setOpenBands] = useState<Record<TriageBand, boolean>>({
+    fix: BAND_META.fix.defaultOpen,
+    look: BAND_META.look.defaultOpen,
+    low: BAND_META.low.defaultOpen,
+  });
 
   // The buzz fires on tap, not on completion: the action is a server round
   // trip, and by the time it resolves the gesture that authorised vibration
@@ -123,6 +127,31 @@ export function ReviewQueueList({ items }: { items: ReviewItem[] }) {
     }
   }
 
+  // Grouped by how much each reading actually matters, then by how badly it
+  // distorts totals within its group — so the numbers corrupting reports sit
+  // at the top rather than wherever their capture date happens to put them.
+  const banded = useMemo(() => {
+    const out: Record<TriageBand, { item: ReviewItem; triage: ReturnType<typeof triageReading> }[]> = {
+      fix: [],
+      look: [],
+      low: [],
+    };
+    for (const item of items) {
+      const triage = triageReading({
+        flagStatus: item.flagStatus,
+        usage: item.usage,
+        trailingAverage: item.trailingAverage,
+      });
+      out[triage.band].push({ item, triage });
+    }
+    for (const band of BAND_ORDER) {
+      out[band].sort(
+        (a, b) => b.triage.weight - a.triage.weight || b.item.capturedAt.localeCompare(a.item.capturedAt)
+      );
+    }
+    return out;
+  }, [items]);
+
   if (items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
@@ -137,17 +166,47 @@ export function ReviewQueueList({ items }: { items: ReviewItem[] }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-3 px-4 py-4">
-      {items.map((item) => {
-        const delta = item.previousValue !== null ? item.readingValue - item.previousValue : null;
-        const busy = busyId === item.readingId;
+    <div className="flex flex-1 flex-col gap-4 px-4 py-4">
+      {BAND_ORDER.map((band) => {
+        const entries = banded[band];
+        if (entries.length === 0) return null;
+        const meta = BAND_META[band];
+        const isOpen = openBands[band];
         return (
-          <div key={item.readingId} className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-              <p className="text-[12.5px] font-semibold text-amber-900">
-                {REASON_COPY[item.flagStatus] ?? "Needs a second look"}
-              </p>
-            </div>
+          <section key={band}>
+            <button
+              type="button"
+              onClick={() => setOpenBands((o) => ({ ...o, [band]: !o[band] }))}
+              aria-expanded={isOpen}
+              className="flex w-full items-center gap-2 py-1.5 text-left"
+            >
+              <span className="text-[13.5px] font-bold text-navy-900">{meta.title}</span>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${meta.pill}`}>{entries.length}</span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+                className={`ml-auto text-text-faint transition-transform ${isOpen ? "rotate-180" : ""}`}
+              >
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {isOpen && (
+              <>
+                <p className="mb-2.5 text-[11.5px] leading-relaxed text-text-muted">{meta.blurb}</p>
+                <div className="flex flex-col gap-3">
+                  {entries.map(({ item, triage }) => {
+                    const delta = item.previousValue !== null ? item.readingValue - item.previousValue : null;
+                    const busy = busyId === item.readingId;
+                    return (
+          <div
+            key={item.readingId}
+            className={`flex flex-col gap-3 rounded-xl border border-l-[3px] border-border bg-surface p-4 ${meta.bar}`}
+          >
+            <p className="text-[12.5px] font-semibold text-navy-900">{triage.reason}</p>
 
             <div className="flex gap-3">
               {item.photoUrl ? (
@@ -169,17 +228,17 @@ export function ReviewQueueList({ items }: { items: ReviewItem[] }) {
                 </p>
                 <div className="mt-1.5 flex items-baseline gap-2">
                   <span className="font-mono text-lg font-bold tabular-nums text-navy-900">
-                    {item.readingValue.toLocaleString()}
+                    {item.readingValue.toLocaleString("en-US")}
                   </span>
                   {delta !== null && (
                     <span className={`font-mono text-xs font-semibold tabular-nums ${delta < 0 ? "text-red-600" : "text-amber-600"}`}>
                       {delta >= 0 ? "+" : ""}
-                      {delta.toLocaleString()}
+                      {delta.toLocaleString("en-US")}
                     </span>
                   )}
                 </div>
                 {item.previousValue !== null && (
-                  <p className="text-[10.5px] text-text-faint">was {item.previousValue.toLocaleString()}</p>
+                  <p className="text-[10.5px] text-text-faint">was {item.previousValue.toLocaleString("en-US")}</p>
                 )}
               </div>
             </div>
@@ -303,6 +362,12 @@ export function ReviewQueueList({ items }: { items: ReviewItem[] }) {
               </>
             )}
           </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </section>
         );
       })}
     </div>

@@ -176,7 +176,7 @@ export function MeterReplacementForm({
             <p className="text-[11px] text-text-muted">
               {oldSerial ? `Serial ${oldSerial}` : "No serial on record"}
               {lastReadingValue !== null && (
-                <> · last {lastReadingValue.toLocaleString()}{lastReadingDate ? ` on ${formatDate(lastReadingDate)}` : ""}</>
+                <> · last {lastReadingValue.toLocaleString("en-US")}{lastReadingDate ? ` on ${formatDate(lastReadingDate)}` : ""}</>
               )}
             </p>
             <input

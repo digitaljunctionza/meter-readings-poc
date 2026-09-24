@@ -170,9 +170,9 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
                     {r.replacementDetail && (
                       <>
                         {r.replacementDetail.oldSerial ? `${r.replacementDetail.oldSerial} ` : "Old meter "}
-                        closed {r.replacementDetail.closingValue.toLocaleString()} →{" "}
+                        closed {r.replacementDetail.closingValue.toLocaleString("en-US")} →{" "}
                         {r.replacementDetail.newSerial ? `${r.replacementDetail.newSerial} ` : "new meter "}
-                        opened {r.replacementDetail.openingValue.toLocaleString()}.
+                        opened {r.replacementDetail.openingValue.toLocaleString("en-US")}.
                       </>
                     )}
                   </td>
