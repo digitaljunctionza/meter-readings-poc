@@ -9,6 +9,7 @@ import { InviteManager } from "@/components/InviteManager";
 import { RebillClientIdField } from "@/components/RebillClientIdField";
 import { InlineDeleteControl } from "@/components/InlineDeleteControl";
 import { EditPropertyButton } from "@/components/EditPropertyButton";
+import { EditClientButton } from "@/components/EditClientButton";
 import { BottomNav } from "@/components/BottomNav";
 import type { Client, Meter, Property, PropertyInvite, Unit } from "@/lib/types";
 
@@ -145,9 +146,20 @@ export default async function ClientsPage({
         <div className="flex flex-col gap-5 rounded-2xl border-2 border-accent-light p-4">
           <div className="flex flex-col gap-3">
             <div>
-              <h2 className="text-lg font-bold text-accent">{activeClient.name}</h2>
-              {activeClient.contact_email && (
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-lg font-bold text-accent">{activeClient.name}</h2>
+                <EditClientButton
+                  clientId={activeClient.id}
+                  currentName={activeClient.name}
+                  currentEmail={activeClient.contact_email}
+                />
+              </div>
+              {activeClient.contact_email ? (
                 <p className="text-sm text-gray-500">{activeClient.contact_email}</p>
+              ) : (
+                <p className="text-sm text-amber-700">
+                  No contact email — reports can&apos;t be emailed to this client yet.
+                </p>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">

@@ -30,6 +30,32 @@ export async function createClientRecord(name: string, contactEmail: string | nu
   return data.id as string;
 }
 
+export async function updateClient(clientId: string, name: string, contactEmail: string | null) {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("Client name is required");
+
+  const email = contactEmail?.trim() || null;
+  // The address reports are emailed to, so a typo here fails silently later.
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error("That doesn't look like a valid email address");
+  }
+
+  const { error } = await supabase
+    .from("clients")
+    .update({ name: trimmed, contact_email: email })
+    .eq("id", clientId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/clients");
+  revalidatePath("/admin/reports");
+  revalidatePath("/admin/quotes");
+  revalidatePath("/admin");
+}
+
 export async function updateRebillClientId(clientId: string, rebillClientId: string | null) {
   await requireAdmin();
   const supabase = await createClient();
