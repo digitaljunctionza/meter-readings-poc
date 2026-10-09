@@ -1,18 +1,7 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  LabelList,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-} from "recharts";
 import { ArcGauge } from "@/components/charts/ArcGauge";
-import { BarGradient, ChartTooltip, compactNumber } from "@/components/charts/chartBits";
+import { UsageTrendChart } from "@/components/charts/UsageTrendChart";
 import { RegisterDigits } from "@/components/client/RegisterDigits";
 import { BoltIcon, DropletIcon } from "@/components/icons";
 import {
@@ -26,25 +15,20 @@ import {
   type ServiceSummary,
 } from "@/lib/clientReport";
 
-/** Bar labels stay exact where they fit — "1,441" beats "1.4k" when there's room. */
-function barLabel(n: number): string {
-  return n >= 100_000 ? compactNumber(n) : formatNumber(n);
-}
-
 function changeLine(s: ServiceSummary): { text: string; className: string } | null {
   if (!s.latest) return null;
   if (s.inProgress && s.previous) {
     return {
       text: `Month still in progress: ${s.latest.readings} of ${s.previous.readings} readings so far`,
-      className: "text-slate-500",
+      className: "text-[#5d6c80]",
     };
   }
   if (!s.previous) {
-    return s.months.length === 1 ? { text: "This is the first month of readings", className: "text-slate-500" } : null;
+    return s.months.length === 1 ? { text: "This is the first month of readings", className: "text-[#5d6c80]" } : null;
   }
   const prev = monthName(s.previous.key);
   if (s.changePct === null) return null;
-  if (s.changePct === 0) return { text: `Same as ${prev}`, className: "text-slate-600" };
+  if (s.changePct === 0) return { text: `Same as ${prev}`, className: "text-text-body" };
   if (s.changePct > 0) return { text: `▲ ${s.changePct}% more than ${prev}`, className: "text-amber-700" };
   return { text: `▼ ${Math.abs(s.changePct)}% less than ${prev}`, className: "text-green-700" };
 }
@@ -63,7 +47,6 @@ export function UsageCard({ summary }: { summary: ServiceSummary }) {
   const unit = SERVICE_UNIT[service];
   const Icon = service === "electricity" ? BoltIcon : DropletIcon;
   const line = changeLine(summary);
-  const gradientId = `bar-${service}`;
 
   const chartData = summary.months.slice(-6).map((m) => ({
     key: m.key,
@@ -73,26 +56,26 @@ export function UsageCard({ summary }: { summary: ServiceSummary }) {
 
   return (
     <section
-      className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+      className="flex flex-col rounded-2xl border border-border bg-surface p-4 sm:p-5"
       aria-label={`${SERVICE_LABEL[service]} usage`}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2 text-sm font-bold" style={{ color }}>
+        <span className="flex items-center gap-2.5 text-base font-bold" style={{ color }}>
           <span
-            className="flex h-7 w-7 items-center justify-center rounded-full"
+            className="flex h-9 w-9 items-center justify-center rounded-xl"
             style={{ backgroundColor: `${color}1a` }}
           >
             <Icon className="h-4 w-4" />
           </span>
           {SERVICE_LABEL[service]} used
         </span>
-        <span className="text-xs font-semibold text-slate-500">{monthLabel(latest.key)}</span>
+        <span className="text-[13px] font-semibold text-[#5d6c80]">{monthLabel(latest.key)}</span>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2 sm:gap-4">
         <div className="flex min-w-0 items-end gap-1.5 sm:gap-3">
           <RegisterDigits value={latest.usage} unit={unit} />
-          <span className="pb-1 text-sm font-semibold text-slate-500">{unit}</span>
+          <span className="pb-1 text-sm font-semibold text-[#5d6c80]">{unit}</span>
         </div>
 
         {ratio !== null && typical !== null && (
@@ -108,61 +91,20 @@ export function UsageCard({ summary }: { summary: ServiceSummary }) {
       {line && <p className={`mt-3 text-sm font-medium ${line.className}`}>{line.text}</p>}
 
       {chartData.length > 1 && (
-        <div className="mt-4 border-t border-slate-100 pt-3">
+        <div className="mt-4 border-t border-divider pt-3">
           <div className="mb-1 flex items-baseline justify-between gap-2">
-            <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-              Last {chartData.length} months
-            </p>
+            <p className="text-sm font-bold text-navy-900">Last {chartData.length} months</p>
             {typical !== null && (
-              <p className="text-[11px] font-medium text-slate-400">
+              <p className="text-[13px] text-[#5d6c80]">
                 Usual {formatNumber(Math.round(typical))} {unit}
               </p>
             )}
           </div>
-          <div className="h-36">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 18, right: 4, bottom: 0, left: 4 }}>
-                <defs>
-                  <BarGradient id={gradientId} color={color} />
-                </defs>
-                <CartesianGrid vertical={false} stroke="#f1f5f9" />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 11, fill: "#64748b" }}
-                  dy={2}
-                />
-                {typical !== null && (
-                  <ReferenceLine
-                    y={Math.round(typical)}
-                    stroke="#94a3b8"
-                    strokeDasharray="4 4"
-                    strokeWidth={1.2}
-                  />
-                )}
-                <Tooltip
-                  cursor={{ fill: "rgba(15, 23, 42, 0.04)", radius: 6 }}
-                  content={<ChartTooltip suffix={unit} />}
-                />
-                <Bar dataKey="usage" radius={[7, 7, 3, 3]} maxBarSize={56}>
-                  {chartData.map((d, i) => (
-                    <Cell
-                      key={d.key}
-                      fill={i === chartData.length - 1 ? color : `url(#${gradientId})`}
-                      fillOpacity={i === chartData.length - 1 ? 1 : 0.55}
-                    />
-                  ))}
-                  <LabelList
-                    dataKey="usage"
-                    position="top"
-                    formatter={(v: unknown) => barLabel(Number(v))}
-                    style={{ fontSize: 10, fontWeight: 600, fill: "#475569" }}
-                  />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <UsageTrendChart
+            service={service}
+            data={chartData.map((d) => ({ month: d.key, label: d.label, usage: d.usage }))}
+            height={170}
+          />
         </div>
       )}
     </section>

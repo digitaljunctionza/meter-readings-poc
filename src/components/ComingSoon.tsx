@@ -7,7 +7,7 @@ import { LockIcon } from "@/components/icons";
  */
 export function ComingSoon({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-500">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-border-strong bg-app-bg px-3 py-1 text-xs font-medium text-[#5d6c80]">
       <LockIcon className="h-3.5 w-3.5" />
       {label} — coming soon
     </span>

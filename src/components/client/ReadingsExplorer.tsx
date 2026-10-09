@@ -27,7 +27,7 @@ import type { Service } from "@/lib/types";
 const PAGE_SIZE = 25;
 
 const controlClass =
-  "rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-navy-700 focus:ring-2 focus:ring-navy-700/20";
+  "rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-navy-900 outline-none transition-colors focus:border-navy-700 focus:ring-2 focus:ring-navy-700/20";
 
 export function ReadingsExplorer({
   propertyName,
@@ -80,7 +80,7 @@ export function ReadingsExplorer({
         sections: [{ propertyName, rows: results, chartRows: rows, openIssueIds: openIds }],
       });
     } catch {
-      setPdfError("We couldn't create the PDF. Please try again.");
+      setPdfError("We couldn't create the report. Please try again.");
     } finally {
       setPreparing(false);
     }
@@ -88,12 +88,12 @@ export function ReadingsExplorer({
 
   if (!latestKey) {
     return (
-      <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-12 text-center">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+      <div className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-border bg-white px-4 py-12 text-center">
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-divider text-[#5d6c80]">
           <SearchIcon className="h-5 w-5" />
         </div>
-        <p className="text-sm font-semibold text-slate-700">No readings yet</p>
-        <p className="max-w-sm text-sm text-slate-500">
+        <p className="text-sm font-semibold text-text-body">No readings yet</p>
+        <p className="max-w-sm text-sm text-[#5d6c80]">
           Your readings will appear here after the next meter round.
         </p>
       </div>
@@ -105,7 +105,7 @@ export function ReadingsExplorer({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-extrabold text-navy-900">Meter readings</h2>
-          <p className="text-sm text-slate-500" aria-live="polite">
+          <p className="text-sm text-[#5d6c80]" aria-live="polite">
             {formatNumber(results.length)} reading{results.length === 1 ? "" : "s"} · {period_}
           </p>
         </div>
@@ -113,18 +113,18 @@ export function ReadingsExplorer({
           type="button"
           onClick={handleDownload}
           disabled={preparing || results.length === 0}
-          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-navy-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-navy-700/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-navy-700 px-5 py-2.5 text-[15px] font-bold text-white transition-colors hover:bg-navy-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <DownloadIcon className="h-4 w-4" />
-          {preparing ? "Preparing PDF…" : "Download PDF"}
+          {preparing ? "Preparing report…" : "Download report"}
         </button>
       </div>
       {pdfError && <p className="text-sm text-red-700">{pdfError}</p>}
 
-      <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 rounded-2xl border border-border bg-white p-3 sm:flex-row sm:items-center">
         <label className="relative min-w-0 flex-1">
           <span className="sr-only">Find a unit</span>
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#5d6c80]" />
           <input
             type="search"
             inputMode="search"
@@ -135,7 +135,7 @@ export function ReadingsExplorer({
           />
         </label>
 
-        <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-0.5" role="group" aria-label="Service">
+        <div className="flex rounded-xl border border-border bg-app-bg p-0.5" role="group" aria-label="Service">
           {(["all", "electricity", "water"] as const).map((s) => (
             <button
               key={s}
@@ -143,7 +143,7 @@ export function ReadingsExplorer({
               aria-pressed={service === s}
               onClick={() => change(() => setService(s))}
               className={`min-h-10 flex-1 rounded-[10px] px-3 text-sm font-semibold transition-colors sm:flex-none ${
-                service === s ? "bg-white text-navy-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                service === s ? "bg-white text-navy-900" : "text-[#5d6c80] hover:text-navy-900"
               }`}
             >
               {s === "all" ? "All" : SERVICE_LABEL[s]}
@@ -181,8 +181,8 @@ export function ReadingsExplorer({
       </div>
 
       {results.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-slate-200 bg-white px-4 py-10 text-center">
-          <p className="max-w-sm text-sm text-slate-500">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-white px-4 py-10 text-center">
+          <p className="max-w-sm text-sm text-[#5d6c80]">
             No readings match{hasFilters ? " those filters" : " this period"}. Try a different unit, service or period.
           </p>
           {hasFilters && (
@@ -194,7 +194,7 @@ export function ReadingsExplorer({
                   setService("all");
                 })
               }
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-sm font-semibold text-text-body hover:border-border-strong"
             >
               <XIcon className="h-4 w-4" />
               Clear filters
@@ -214,7 +214,7 @@ export function ReadingsExplorer({
                 <button
                   type="button"
                   onClick={() => setOpenId(r.id)}
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 sm:gap-4 sm:px-4"
+                  className="group flex w-full items-center gap-3 rounded-2xl border border-border bg-white p-3 text-left transition-colors hover:border-border-strong focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 sm:gap-4 sm:px-4"
                 >
                   <span
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
@@ -227,7 +227,7 @@ export function ReadingsExplorer({
                     <span className="block truncate text-[15px] font-bold text-navy-900">
                       {unitTitle(r.unit_number)}
                     </span>
-                    <span className="block truncate text-xs text-slate-500">
+                    <span className="block truncate text-xs text-[#5d6c80]">
                       {SERVICE_LABEL[svc]} · {formatDay(r.captured_at)}
                     </span>
                     {r.flag_status !== "ok" && (
@@ -243,9 +243,9 @@ export function ReadingsExplorer({
                   <span className="shrink-0 text-right">
                     <span className="block font-mono text-[15px] font-bold tabular-nums text-navy-900">
                       {formatNumber(r.reading_value)}
-                      <span className="ml-1 font-sans text-xs font-semibold text-slate-400">{unit}</span>
+                      <span className="ml-1 font-sans text-xs font-semibold text-[#5d6c80]">{unit}</span>
                     </span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-xs text-[#5d6c80]">
                       {r.usage !== null && r.usage >= 0 ? `Used ${formatNumber(r.usage)} ${unit}` : "First reading"}
                     </span>
                   </span>
@@ -256,7 +256,7 @@ export function ReadingsExplorer({
                     viewBox="0 0 24 24"
                     fill="none"
                     aria-hidden="true"
-                    className="hidden shrink-0 text-slate-300 transition-colors group-hover:text-slate-500 sm:block"
+                    className="hidden shrink-0 text-text-faint transition-colors group-hover:text-[#5d6c80] sm:block"
                   >
                     <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -271,7 +271,7 @@ export function ReadingsExplorer({
         <button
           type="button"
           onClick={() => setVisible((v) => v + PAGE_SIZE)}
-          className="mx-auto min-h-11 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:border-slate-300"
+          className="mx-auto min-h-11 rounded-full border border-border bg-white px-5 py-2.5 text-sm font-semibold text-text-body hover:border-border-strong"
         >
           Show {Math.min(PAGE_SIZE, results.length - visible)} more ({formatNumber(results.length - visible)} remaining)
         </button>

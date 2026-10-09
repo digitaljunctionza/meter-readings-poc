@@ -28,5 +28,5 @@ export type StatusTone = "good" | "watch" | "neutral";
 export const TONE_CLASS: Record<StatusTone, { pill: string; dot: string }> = {
   good: { pill: "border-green-200 bg-green-50 text-green-700", dot: "bg-green-500" },
   watch: { pill: "border-amber-200 bg-amber-50 text-amber-800", dot: "bg-amber-500" },
-  neutral: { pill: "border-slate-200 bg-slate-50 text-slate-600", dot: "bg-slate-400" },
+  neutral: { pill: "border-border bg-app-bg text-text-body", dot: "bg-slate-400" },
 };
