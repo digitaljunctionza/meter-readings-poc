@@ -50,21 +50,21 @@ export function QuoteBuilderForm({
 
   if (clients.length === 0) {
     return (
-      <p className="rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-sm text-gray-500">
+      <p className="rounded-lg border border-border bg-white px-4 py-3 text-sm text-[#5d6c80]">
         Link at least one client to Rebill (above) before you can create a quote.
       </p>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border-2 border-accent-light p-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-border p-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-accent">Client</span>
+          <span className="text-sm font-semibold text-navy-900">Client</span>
           <select
             value={rebillClientId}
             onChange={(e) => setRebillClientId(e.target.value)}
-            className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+            className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
           >
             {clients.map((c) => (
               <option key={c.id} value={c.rebillClientId}>
@@ -74,23 +74,23 @@ export function QuoteBuilderForm({
           </select>
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-accent">Quote date</span>
+          <span className="text-sm font-semibold text-navy-900">Quote date</span>
           <input
             type="date"
             required
             value={quoteDate}
             onChange={(e) => setQuoteDate(e.target.value)}
-            className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+            className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
           />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold text-accent">Expiry date</span>
+          <span className="text-sm font-semibold text-navy-900">Expiry date</span>
           <input
             type="date"
             required
             value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+            className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
           />
         </label>
       </div>
@@ -98,19 +98,19 @@ export function QuoteBuilderForm({
       <LineItemsEditor items={items} onChange={setItems} catalogItems={catalogItems} />
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold text-accent">Notes (optional)</span>
+        <span className="text-sm font-semibold text-navy-900">Notes (optional)</span>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
-          className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+          className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
         />
       </label>
 
       <button
         type="submit"
         disabled={isPending}
-        className="w-fit rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+        className="w-fit rounded-full bg-navy-700 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
       >
         {isPending ? "Creating…" : "Create quote in Rebill"}
       </button>

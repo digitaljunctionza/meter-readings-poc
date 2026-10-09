@@ -130,7 +130,7 @@ export function ArcGauge({
           {centerLabel}
         </text>
       </svg>
-      <p className="text-[11px] font-semibold text-slate-500">{caption}</p>
+      <p className="text-[11px] font-semibold text-[#5d6c80]">{caption}</p>
     </div>
   );
 }

@@ -207,27 +207,27 @@ export function UserManager({
             className="flex flex-col gap-3"
           >
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-accent">Full name</span>
+              <span className="text-sm font-semibold text-navy-900">Full name</span>
               <input
                 type="text"
                 value={form.fullName}
                 onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))}
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-accent">Email</span>
+              <span className="text-sm font-semibold text-navy-900">Email</span>
               <input
                 type="email"
                 required
                 autoComplete="off"
                 value={form.email}
                 onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-accent">Temporary password</span>
+              <span className="text-sm font-semibold text-navy-900">Temporary password</span>
               <input
                 type="text"
                 required
@@ -236,14 +236,14 @@ export function UserManager({
                 value={form.password}
                 onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
                 placeholder="At least 8 characters"
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15 font-mono"
               />
-              <span className="text-[11px] text-gray-500">
+              <span className="text-[13px] text-[#5d6c80]">
                 Shown in plain text so you can read it out. Tell them to change it after their first sign-in.
               </span>
             </label>
             <fieldset className="flex flex-col gap-1.5">
-              <legend className="text-xs font-bold text-accent">Access level</legend>
+              <legend className="text-sm font-semibold text-navy-900">Access level</legend>
               <div className="flex gap-2">
                 {(["client", "admin"] as Role[]).map((r) => (
                   <button
@@ -252,15 +252,15 @@ export function UserManager({
                     onClick={() => setForm((s) => ({ ...s, role: r }))}
                     className={`flex-1 rounded-lg border-2 py-2 text-xs font-semibold capitalize ${
                       form.role === r
-                        ? "border-accent bg-accent text-white"
-                        : "border-accent-light text-gray-600"
+                        ? "border-navy-700 bg-navy-700 text-white"
+                        : "border-border text-text-body"
                     }`}
                   >
                     {r}
                   </button>
                 ))}
               </div>
-              <span className="text-[11px] text-gray-500">
+              <span className="text-[13px] text-[#5d6c80]">
                 {form.role === "admin"
                   ? "Full access: capture, review, clients, quotes and users."
                   : "Sees only the reports for the clients they're given access to."}
@@ -268,15 +268,15 @@ export function UserManager({
             </fieldset>
             {form.role === "client" && (
               <fieldset className="flex flex-col gap-1.5">
-                <legend className="text-xs font-bold text-accent">Client access</legend>
+                <legend className="text-sm font-semibold text-navy-900">Client access</legend>
                 {clients.length === 0 ? (
-                  <span className="text-[11px] text-gray-500">
+                  <span className="text-[13px] text-[#5d6c80]">
                     No clients yet — add one under Clients &amp; meters, then grant access here.
                   </span>
                 ) : (
                   <div className="flex flex-col gap-1.5">
                     {clients.map((c) => (
-                      <label key={c.id} className="flex items-center gap-2 text-sm text-gray-700">
+                      <label key={c.id} className="flex items-center gap-2 text-sm text-text-body">
                         <input
                           type="checkbox"
                           checked={form.clientIds.includes(c.id)}
@@ -295,16 +295,16 @@ export function UserManager({
                     ))}
                   </div>
                 )}
-                <span className="text-[11px] text-gray-500">
+                <span className="text-[13px] text-[#5d6c80]">
                   Grants every property under the client(s) checked. Can be changed later from Access.
                 </span>
               </fieldset>
             )}
-            {error && <p className="text-xs text-red-700">{error}</p>}
+            {error && <p className="text-sm font-medium text-red-600">{error}</p>}
             <button
               type="submit"
               disabled={isPending}
-              className="rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-full bg-navy-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
             >
               {isPending ? "Creating…" : "Create user"}
             </button>
@@ -332,7 +332,7 @@ export function UserManager({
               className="flex flex-col gap-2"
             >
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-accent">Set a new password</span>
+                <span className="text-sm font-semibold text-navy-900">Set a new password</span>
                 <input
                   type="text"
                   required
@@ -341,20 +341,20 @@ export function UserManager({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="At least 8 characters"
-                  className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                  className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15 font-mono"
                 />
               </label>
               <button
                 type="submit"
                 disabled={isPending}
-                className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="min-h-12 rounded-xl bg-navy-700 px-5 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-50"
               >
                 {isPending ? "Saving…" : "Set password"}
               </button>
             </form>
 
-            <div className="border-t border-accent-light pt-3">
-              <p className="mb-2 text-[11px] text-gray-500">
+            <div className="border-t border-border pt-3">
+              <p className="mb-2 text-[11px] text-[#5d6c80]">
                 Better when they aren&rsquo;t with you — they pick their own password and you never handle it.
               </p>
               <button
@@ -372,13 +372,13 @@ export function UserManager({
                     }
                   );
                 }}
-                className="w-full rounded-full border-2 border-accent-light px-4 py-2 text-sm font-semibold text-accent disabled:opacity-50"
+                className="w-full rounded-full border border-border px-4 py-2 text-sm font-semibold text-navy-700 disabled:opacity-50"
               >
                 Email a reset link instead
               </button>
             </div>
 
-            {error && <p className="text-xs text-red-700">{error}</p>}
+            {error && <p className="text-sm font-medium text-red-600">{error}</p>}
           </div>
         </Modal>
       )}
@@ -386,12 +386,12 @@ export function UserManager({
       {dialog?.kind === "access" && (
         <Modal title={`Access · ${dialog.user.fullName || dialog.user.email}`} onClose={close}>
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-gray-500">
+            <p className="text-[13px] text-[#5d6c80]">
               Which clients&rsquo; properties can {dialog.user.fullName || dialog.user.email} see? Granting a
               client gives access to every property under it.
             </p>
             {clients.length === 0 ? (
-              <p className="text-sm text-gray-500">No clients yet — add one under Clients &amp; meters.</p>
+              <p className="text-sm text-[#5d6c80]">No clients yet — add one under Clients &amp; meters.</p>
             ) : (
               <div className="flex flex-col gap-1.5">
                 {clients.map((c) => {
@@ -399,7 +399,7 @@ export function UserManager({
                   return (
                     <label
                       key={c.id}
-                      className="flex items-center gap-2 rounded-lg border-2 border-accent-light px-3 py-2 text-sm text-gray-700"
+                      className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-text-body"
                     >
                       <input
                         type="checkbox"
@@ -414,7 +414,7 @@ export function UserManager({
                 })}
               </div>
             )}
-            {error && <p className="text-xs text-red-700">{error}</p>}
+            {error && <p className="text-sm font-medium text-red-600">{error}</p>}
           </div>
         </Modal>
       )}
@@ -427,12 +427,12 @@ export function UserManager({
               they captured stay in the system.
             </p>
             <p className="text-xs text-text-muted">This can&rsquo;t be undone.</p>
-            {error && <p className="text-xs text-red-700">{error}</p>}
+            {error && <p className="text-sm font-medium text-red-600">{error}</p>}
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={close}
-                className="flex-1 rounded-full border-2 border-accent-light px-4 py-2 text-sm font-semibold text-gray-600"
+                className="flex-1 rounded-full border border-border px-4 py-2 text-sm font-semibold text-text-body"
               >
                 Cancel
               </button>

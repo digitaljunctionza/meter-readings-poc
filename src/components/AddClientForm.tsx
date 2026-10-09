@@ -35,7 +35,7 @@ export function AddClientForm() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 w-fit items-center gap-1.5 rounded-full border-2 border-dashed border-accent-light px-4 text-sm font-semibold text-accent hover:border-accent"
+        className="flex min-h-11 w-fit items-center gap-1.5 rounded-xl bg-navy-700 px-4 text-sm font-bold text-white hover:bg-navy-900"
       >
         + New client
       </button>
@@ -44,7 +44,7 @@ export function AddClientForm() {
         <Modal title="Add a client" onClose={() => setOpen(false)}>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-accent">Client name</span>
+              <span className="text-sm font-semibold text-navy-900">Client name</span>
               <input
                 type="text"
                 autoFocus
@@ -52,31 +52,31 @@ export function AddClientForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Tarragon Two Body Corporate"
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-accent">Contact email (optional)</span>
+              <span className="text-sm font-semibold text-navy-900">Contact email (optional)</span>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
               />
             </label>
-            {error && <p className="text-sm text-red-700">{error}</p>}
+            {error && <p className="text-sm font-medium text-red-600">{error}</p>}
             <div className="mt-1 flex gap-2">
               <button
                 type="submit"
                 disabled={isPending}
-                className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="min-h-12 rounded-xl bg-navy-700 px-5 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-50"
               >
                 {isPending ? "Adding…" : "Add client"}
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full border-2 border-accent-light px-4 py-2 text-sm font-medium text-gray-600"
+                className="min-h-12 rounded-xl border-[1.5px] border-border-strong px-5 text-[15px] font-bold text-navy-700 hover:bg-app-bg"
               >
                 Cancel
               </button>

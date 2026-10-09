@@ -5,6 +5,7 @@ import { getProfile } from "@/lib/auth";
 import { QuoteBuilderForm } from "@/components/QuoteBuilderForm";
 import { QuoteList } from "@/components/QuoteList";
 import { BottomNav } from "@/components/BottomNav";
+import { AdminPage, AdminSubHeader } from "@/components/AdminPage";
 import { isConfigured, listQuotes, listItems, type Quote, type RebillItem } from "@/lib/rebill/client";
 import type { Client } from "@/lib/types";
 
@@ -50,19 +51,9 @@ export default async function QuotesPage() {
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl min-w-0 flex-col gap-6 overflow-x-hidden bg-white px-4 py-6 pb-32">
-      <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-navy-700 px-3 py-3">
-        <Link
-          href="/admin/more"
-          aria-label="Back"
-          className="flex h-10 w-10 shrink-0 items-center justify-center text-white"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
-        <h1 className="min-w-0 flex-1 truncate text-sm font-bold text-white">Quotes</h1>
-      </div>
+    <AdminPage>
+      <AdminSubHeader title="Quotes" description="Build quotes and send them through Rebill." />
+      <div className="flex flex-col gap-6 px-4 py-5">
 
       {!connected ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-900">
@@ -84,7 +75,7 @@ export default async function QuotesPage() {
       ) : null}
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-bold text-accent">New quote</h2>
+        <h2 className="text-lg font-extrabold text-navy-900">New quote</h2>
         <QuoteBuilderForm
           clients={clients
             .filter((c) => c.rebill_client_id)
@@ -95,28 +86,29 @@ export default async function QuotesPage() {
 
       {connected && !quotesError && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-bold text-accent">Quotes ({quotes.length})</h2>
+          <h2 className="text-lg font-extrabold text-navy-900">Quotes ({quotes.length})</h2>
           <QuoteList
             quotes={quotes}
             clientNameByRebillId={clientNameByRebillId}
             catalogItems={catalogItems}
           />
-          <p className="text-xs text-gray-500">Tap a quote to see its line items and edit them.</p>
+          <p className="text-[13px] text-[#5d6c80]">Tap a quote to see its line items and edit them.</p>
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
-        <span className="font-mono font-semibold text-gray-700">
+      <p className="text-[13px] text-[#5d6c80]">
+        <span className="font-mono font-semibold text-text-body">
           {linkedCount}/{clients.length}
         </span>{" "}
         client{clients.length === 1 ? "" : "s"} linked to Rebill. Manage links from{" "}
-        <Link href="/admin/clients" className="text-accent underline">
-          Clients &amp; meters
+        <Link href="/admin/clients" className="text-navy-700 underline">
+          Clients
         </Link>
         .
       </p>
+      </div>
 
       <BottomNav />
-    </main>
+    </AdminPage>
   );
 }

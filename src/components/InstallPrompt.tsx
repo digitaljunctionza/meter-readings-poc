@@ -85,16 +85,16 @@ export function InstallPrompt({ className }: { className?: string }) {
           onClick={() => setShowHint(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl border-2 border-accent-light bg-white p-5 text-center"
+            className="w-full max-w-sm rounded-2xl border border-border bg-white p-5 text-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="mb-2 font-bold text-accent">Add to Home Screen</p>
+            <p className="mb-2 font-bold text-navy-700">Add to Home Screen</p>
             {isIos() ? (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-text-body">
                 Tap the Share icon in Safari, then choose &quot;Add to Home Screen&quot;.
               </p>
             ) : (
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-text-body">
                 Open your browser&apos;s menu (usually ⋮ or ⋯ in the top corner) and look for
                 &quot;Install app&quot; or &quot;Add to Home Screen&quot;. If you don&apos;t see it, your browser may
                 not support installing this app yet — Chrome and Edge support it best.
@@ -103,7 +103,7 @@ export function InstallPrompt({ className }: { className?: string }) {
             <button
               type="button"
               onClick={() => setShowHint(false)}
-              className="mt-4 w-full rounded-full bg-accent py-2.5 text-sm font-semibold text-white"
+              className="mt-4 w-full rounded-full bg-navy-700 py-2.5 text-sm font-semibold text-white"
             >
               Got it
             </button>

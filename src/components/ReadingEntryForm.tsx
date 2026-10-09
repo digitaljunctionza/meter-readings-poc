@@ -111,15 +111,6 @@ export function ReadingEntryForm({
     };
   }, [raw, previousValue, trailingAverage]);
 
-  const deltaColorClass =
-    deltaTone === "negative"
-      ? "text-red-600"
-      : deltaTone === "high"
-        ? "text-amber-600"
-        : deltaTone === "normal"
-          ? "text-green-700"
-          : "text-text-muted";
-
   function handlePhotoChange(file: File | null) {
     setPhoto(file);
     setPhotoPreview((prev) => {
@@ -211,111 +202,141 @@ export function ReadingEntryForm({
     }
   }
 
-  const title = unitNumber ? `Unit ${unitNumber} · ${service === "water" ? "Water" : "Electricity"}` : meterLabel;
+  const serviceName = service === "water" ? "Water" : "Electricity";
+  const title = unitNumber ? `Unit ${unitNumber} · ${serviceName}` : meterLabel;
+  const unitLabel = service === "water" ? "kL" : "kWh";
+  const ready = raw !== "" && photo !== null;
+
+  const hintClass =
+    deltaTone === "negative"
+      ? "font-semibold text-red-600"
+      : deltaTone === "high"
+        ? "font-semibold text-[#7a5410]"
+        : deltaTone === "normal"
+          ? "font-semibold text-[#2e6b1d]"
+          : "text-[#5d6c80]";
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-app-bg">
-      <div className="flex-none border-b border-border bg-surface px-5 pb-3.5 pt-[calc(env(safe-area-inset-top)+14px)]">
+      <header className="flex-none border-b border-border bg-surface px-4 pb-4 pt-[calc(env(safe-area-inset-top)+16px)]">
         <div className="flex items-center gap-3">
           <Link
             href={`/capture/${propertyId}`}
             aria-label="Back to meter list"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border hover:bg-app-bg"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M15 5l-7 7 7 7" stroke="var(--navy-900)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke="var(--navy-900)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[17px] font-bold text-navy-900">{title}</p>
-            <p className="truncate text-[11px] text-text-muted">
-              {propertyName} · meter {meterPosition} of {meterTotal}
+            <p className="truncate text-[13px] text-[#5d6c80]">
+              {propertyName} · {meterPosition} of {meterTotal}
             </p>
+            <h1 className="truncate text-xl font-extrabold text-navy-900">{title}</h1>
           </div>
+          <span
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+              service === "water" ? "bg-[#e7f0fa] text-blue-500" : "bg-[#fdf3e2] text-amber-800"
+            }`}
+            aria-hidden="true"
+          >
+            {service === "water" ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3s7 7.5 7 12a7 7 0 1 1-14 0c0-4.5 7-12 7-12Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
         </div>
-      </div>
+      </header>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
-        <div className="flex gap-3">
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
+        />
+        {photoPreview ? (
+          <section className="flex items-center gap-3.5 rounded-2xl border border-green-200 bg-surface p-3.5">
+            <a
+              href={photoPreview}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View the photo full size"
+              className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-navy-900"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photoPreview} alt="Meter photo" className="h-full w-full object-cover" />
+            </a>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-bold text-[#2e6b1d]">Photo attached</span>
+              <span className="block text-[13px] text-[#5d6c80]">Step 1 of 2 done</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="min-h-11 rounded-xl border border-border-strong bg-surface px-3.5 text-sm font-bold text-navy-700 hover:bg-app-bg"
+            >
+              Retake
+            </button>
+          </section>
+        ) : (
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            aria-label={photo ? "Retake photo" : "Attach a meter photo"}
-            className="relative h-[92px] w-[92px] shrink-0 overflow-hidden rounded-xl bg-navy-900"
+            className="flex items-center gap-3.5 rounded-2xl border-2 border-dashed border-[#9fb3cc] bg-surface p-3.5 text-left hover:border-navy-700"
           >
-            {photoPreview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={photoPreview} alt="Meter photo" className="h-full w-full object-cover" />
-            ) : (
-              <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-white/60">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path
-                    d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1L9 4h6l1.5 2h1A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="12" cy="12.5" r="3.2" stroke="currentColor" strokeWidth="1.6" />
-                </svg>
-                <span className="text-[10px]">Add photo</span>
-              </span>
-            )}
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy-700 text-white">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 8h3l2-3h6l2 3h3v11H4z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                <circle cx="12" cy="13" r="3.5" stroke="currentColor" strokeWidth="2" />
+              </svg>
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-base font-bold text-navy-700">Step 1: Take a photo of the meter</span>
+              <span className="mt-0.5 block text-[13px] text-[#5d6c80]">{locationNote || "Required before saving"}</span>
+            </span>
           </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
-          />
-          <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
-            <p className={`text-[11px] font-medium ${photo ? "text-green-700" : "text-text-muted"}`}>
-              {photo ? "Photo attached" : locationNote || "Required before saving"}
-            </p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="min-h-[44px] flex-1 rounded-lg border border-border bg-surface text-xs font-semibold text-navy-900"
-              >
-                {photo ? "Retake" : "Take photo"}
-              </button>
-              {photoPreview && (
-                <a
-                  href={photoPreview}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-border bg-surface text-xs font-semibold text-navy-900"
-                >
-                  View
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
 
-        <div className="flex flex-col gap-2">
-          <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-text-muted">
-            READING · {service === "water" ? "kl" : "kWh"}
-          </span>
-          <div className="flex min-h-[56px] items-baseline gap-2">
-            <span className="font-mono text-[46px] font-bold leading-none tracking-tight text-navy-900 tabular-nums">
-              {display}
+        <section className="flex flex-col gap-2.5 rounded-2xl border border-border bg-surface p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[13px] text-[#5d6c80]">
+            <span>Step 2: Type the reading</span>
+            <span>
+              {previousValue !== null ? (
+                <>
+                  Last:{" "}
+                  <strong className="font-mono font-bold text-navy-900 tabular-nums">
+                    {previousValue.toLocaleString("en-US")}
+                  </strong>
+                  {previousCapturedAt ? ` on ${formatDate(previousCapturedAt)}` : ""}
+                </>
+              ) : (
+                "No previous reading"
+              )}
             </span>
-            <span className="h-[38px] w-[3px] bg-green-500" />
           </div>
-          <div className="flex items-center justify-between border-t border-border pt-2.5">
-            <span className="text-xs text-text-muted">
-              {previousValue !== null
-                ? `Last ${previousValue.toLocaleString("en-US")}${previousCapturedAt ? ` on ${formatDate(previousCapturedAt)}` : ""}`
-                : "No previous reading"}
-            </span>
-            <span className={`font-mono text-[13px] font-semibold tabular-nums ${deltaColorClass}`}>{delta}</span>
+          <div
+            aria-live="polite"
+            className="flex h-16 items-center justify-end gap-2 rounded-xl bg-navy-900 px-4 text-white"
+          >
+            <span className="font-mono text-[34px] font-bold tracking-wide tabular-nums">{display}</span>
+            <span className="text-[15px] text-white/60">{unitLabel}</span>
           </div>
-          <p className="text-[11px] leading-snug text-text-muted">{hint}</p>
-        </div>
+          <div className="flex items-start justify-between gap-3">
+            <p className={`text-[13px] leading-snug ${hintClass}`}>{hint}</p>
+            {delta !== "—" && (
+              <span className={`shrink-0 font-mono text-sm font-bold tabular-nums ${hintClass}`}>{delta}</span>
+            )}
+          </div>
+        </section>
 
         <div className="grid grid-cols-3 gap-2">
           {KEYS.map((k) => (
@@ -323,15 +344,15 @@ export function ReadingEntryForm({
               key={k}
               type="button"
               onClick={() => press(k)}
-              aria-label={k === "back" ? "Backspace" : k}
-              className={`flex h-[52px] items-center justify-center rounded-xl border border-border font-mono text-[22px] font-semibold text-navy-900 transition-colors active:bg-green-500 active:text-white active:border-green-500 ${
+              aria-label={k === "back" ? "Delete last digit" : k === "." ? "Decimal point" : k}
+              className={`flex h-[54px] items-center justify-center rounded-xl border border-border font-mono text-[22px] font-bold text-navy-900 transition-colors active:border-navy-700 active:bg-navy-700 active:text-white ${
                 k === "." || k === "back" ? "bg-divider" : "bg-surface"
               }`}
             >
               {k === "back" ? (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M9 5h11v14H9L3 12z" stroke="var(--navy-900)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 9.5l5 5M17 9.5l-5 5" stroke="var(--navy-900)" strokeWidth="1.9" strokeLinecap="round" />
+                  <path d="M9 5h11v14H9L3 12z" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M12 9.5l5 5M17 9.5l-5 5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
                 </svg>
               ) : (
                 k
@@ -341,12 +362,10 @@ export function ReadingEntryForm({
         </div>
 
         {showNote ? (
-          <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-text-muted">
-              NOTE TO WAYNE (OPTIONAL)
-            </span>
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-navy-900">
+            Note for Wayne (optional)
             <textarea
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-navy-900 outline-none focus:border-green-500"
+              className="w-full rounded-xl border-[1.5px] border-border-strong bg-surface px-3.5 py-2.5 text-[15px] font-normal text-navy-900 outline-none focus:border-navy-700"
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -356,25 +375,29 @@ export function ReadingEntryForm({
           <button
             type="button"
             onClick={() => setShowNote(true)}
-            className="self-start text-xs font-medium text-blue-500 underline-offset-2 hover:underline"
+            className="min-h-11 self-start text-sm font-semibold text-navy-700 underline-offset-2 hover:underline"
           >
             + Add a note
           </button>
         )}
 
         {error && (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
+          <p role="alert" className="rounded-xl border border-red-600/30 bg-red-600/[0.06] px-3.5 py-2.5 text-sm font-medium text-red-600">
+            {error}
+          </p>
         )}
       </div>
 
-      <div className="flex-none border-t border-border bg-surface px-5 pb-[calc(env(safe-area-inset-bottom)+14px)] pt-3">
+      <div className="sticky bottom-0 flex-none border-t border-border bg-surface px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3">
         <button
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="min-h-[54px] w-full rounded-2xl bg-green-500 text-[15px] font-bold text-white transition-opacity disabled:opacity-50"
+          className={`min-h-14 w-full rounded-2xl text-base font-bold transition-colors disabled:opacity-60 ${
+            ready ? "bg-navy-700 text-white hover:bg-navy-900" : "bg-border text-[#5d6c80]"
+          }`}
         >
-          {submitting ? "Saving…" : "Save & next"}
+          {submitting ? "Saving…" : "Save & next meter"}
         </button>
       </div>
     </main>

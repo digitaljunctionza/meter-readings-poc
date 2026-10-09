@@ -1,17 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { BarGradient, ChartTooltip, compactNumber } from "@/components/charts/chartBits";
+import { UsageTrendChart } from "@/components/charts/UsageTrendChart";
 import { StatusArc } from "@/components/charts/StatusArc";
 import { BoltIcon, DropletIcon } from "@/components/icons";
 import { ADMIN_FLAG_LABEL as FLAG_LABEL } from "@/lib/flagDisplay";
@@ -30,8 +20,8 @@ const SERVICE_META: Record<
   Service,
   { label: string; color: string; softBg: string; unit: string; Icon: typeof BoltIcon }
 > = {
-  electricity: { label: "Electricity", color: "#d97706", softBg: "bg-amber-50", unit: "kWh", Icon: BoltIcon },
-  water: { label: "Water", color: "#2563eb", softBg: "bg-blue-50", unit: "kl", Icon: DropletIcon },
+  electricity: { label: "Electricity", color: "#9a6712", softBg: "bg-amber-50", unit: "kWh", Icon: BoltIcon },
+  water: { label: "Water", color: "#1f6bb8", softBg: "bg-blue-50", unit: "kL", Icon: DropletIcon },
 };
 
 /**
@@ -55,8 +45,8 @@ function implausibleReadings(rows: ReadingRow[]): ReadingRow[] {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">{title}</p>
+    <div className="flex flex-col rounded-2xl border border-border bg-surface p-4">
+      <p className="mb-2 text-[15px] font-bold text-navy-900">{title}</p>
       {/* Grid rows stretch to the tallest panel, so centre the contents rather
           than leaving the shorter one top-heavy with dead space beneath. */}
       <div className="flex flex-1 flex-col justify-center">{children}</div>
@@ -91,10 +81,7 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
 
   const flagged = rows.length - flagCounts.ok;
   const okPct = rows.length > 0 ? Math.round((flagCounts.ok / rows.length) * 100) : 0;
-  const average =
-    trendData.length > 1 ? trendData.reduce((sum, d) => sum + d.usage, 0) / trendData.length : null;
   const suspect = implausibleReadings(rows);
-  const gradientId = `admin-bar-${service}`;
 
   return (
     <div className="flex flex-col gap-3">
@@ -105,16 +92,16 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
         >
           <Icon className="h-4 w-4" />
         </span>
-        <p className="text-sm font-bold" style={{ color: meta.color }}>
+        <p className="text-base font-bold" style={{ color: meta.color }}>
           {meta.label}
         </p>
-        <span className="text-xs text-slate-500">
+        <span className="text-[13px] text-[#5d6c80]">
           {rows.length} reading{rows.length === 1 ? "" : "s"}
           {flagged > 0 && ` · ${flagged} flagged`}
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
         <Panel title="Reading status breakdown">
           <div className="flex items-center gap-3">
             <StatusArc
@@ -133,13 +120,13 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
 
             <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
               {pieData.map((entry) => (
-                <li key={entry.status} className="flex items-center gap-2 text-xs">
+                <li key={entry.status} className="flex items-center gap-2 text-[13px]">
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: FLAG_COLOR[entry.status] }}
                     aria-hidden="true"
                   />
-                  <span className="min-w-0 flex-1 truncate text-slate-600">{entry.name}</span>
+                  <span className="min-w-0 flex-1 truncate text-text-body">{entry.name}</span>
                   <span className="font-mono font-bold tabular-nums text-navy-900">{entry.value}</span>
                 </li>
               ))}
@@ -147,51 +134,20 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
           </div>
         </Panel>
 
-        <Panel title="Monthly usage">
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={trendData} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
-                <defs>
-                  <BarGradient id={gradientId} color={meta.color} />
-                </defs>
-                <CartesianGrid vertical={false} stroke="#eef2f7" />
-                <XAxis
-                  dataKey="label"
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 11, fill: "#64748b" }}
-                  dy={2}
-                />
-                {/* An explicit axis, so a month inflated by a mistyped reading is
-                    visible as an outlier instead of silently rescaling the rest. */}
-                <YAxis
-                  width={46}
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fontSize: 10, fill: "#94a3b8" }}
-                  tickFormatter={compactNumber}
-                />
-                {average !== null && (
-                  <ReferenceLine y={Math.round(average)} stroke="#94a3b8" strokeDasharray="4 4" strokeWidth={1.2} />
-                )}
-                <Tooltip
-                  cursor={{ fill: "rgba(15, 23, 42, 0.04)", radius: 6 }}
-                  content={
-                    <ChartTooltip
-                      suffix={meta.unit}
-                      labelFormatter={(label) => {
-                        const match = trendData.find((d) => d.label === label);
-                        return match ? monthLabel(match.month) : label;
-                      }}
-                    />
-                  }
-                />
-                <Bar dataKey="usage" radius={[7, 7, 3, 3]} maxBarSize={56} fill={`url(#${gradientId})`} />
-              </BarChart>
-            </ResponsiveContainer>
+        <div className="flex flex-col gap-2 rounded-2xl bg-navy-900 p-4 text-white sm:col-span-2 lg:col-span-1">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-[15px] font-bold">{meta.label} per month</p>
+            <span className="text-xs font-semibold text-white/60">{meta.unit}</span>
           </div>
+          <UsageTrendChart
+            service={service}
+            data={trendData.slice(-12)}
+            variant="dark"
+            height={200}
+            showAxis
+          />
           {suspect.length > 0 && (
-            <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11.5px] leading-relaxed text-amber-900">
+            <div className="mt-2 rounded-xl bg-amber-50 px-3.5 py-2.5 text-[13px] leading-relaxed text-amber-900">
               <p>
                 <b className="font-bold">
                   {suspect.length} reading{suspect.length === 1 ? "" : "s"} look
@@ -213,7 +169,7 @@ function UtilityDashboard({ service, rows }: { service: Service; rows: ReadingRo
               </Link>
             </div>
           )}
-        </Panel>
+        </div>
       </div>
     </div>
   );

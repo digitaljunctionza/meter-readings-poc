@@ -57,9 +57,9 @@ export function LineItemsEditor({
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-bold text-accent">Line items</span>
+      <span className="text-sm font-semibold text-navy-900">Line items</span>
       {items.map((item, i) => (
-        <div key={i} className="grid grid-cols-1 gap-2 rounded-lg border-2 border-accent-light p-3 sm:grid-cols-12">
+        <div key={i} className="grid grid-cols-1 gap-2 rounded-lg border border-border p-3 sm:grid-cols-12">
           <input
             type="text"
             placeholder="Item name"
@@ -67,7 +67,7 @@ export function LineItemsEditor({
             disabled={disabled}
             value={item.name}
             onChange={(e) => updateItem(i, { name: e.target.value })}
-            className="rounded-lg border-2 border-accent-light bg-white px-2.5 py-2 text-sm outline-none focus:border-accent disabled:opacity-50 sm:col-span-4"
+            className="rounded-lg border border-border bg-white px-2.5 py-2 text-sm outline-none focus:border-navy-700 disabled:opacity-50 sm:col-span-4"
           />
           <input
             type="text"
@@ -75,7 +75,7 @@ export function LineItemsEditor({
             disabled={disabled}
             value={item.description}
             onChange={(e) => updateItem(i, { description: e.target.value })}
-            className="rounded-lg border-2 border-accent-light bg-white px-2.5 py-2 text-sm outline-none focus:border-accent disabled:opacity-50 sm:col-span-3"
+            className="rounded-lg border border-border bg-white px-2.5 py-2 text-sm outline-none focus:border-navy-700 disabled:opacity-50 sm:col-span-3"
           />
           <input
             type="number"
@@ -85,7 +85,7 @@ export function LineItemsEditor({
             disabled={disabled}
             value={item.quantity}
             onChange={(e) => updateItem(i, { quantity: e.target.value })}
-            className="rounded-lg border-2 border-accent-light bg-white px-2.5 py-2 text-sm outline-none focus:border-accent disabled:opacity-50 sm:col-span-2"
+            className="rounded-lg border border-border bg-white px-2.5 py-2 text-sm outline-none focus:border-navy-700 disabled:opacity-50 sm:col-span-2"
           />
           <input
             type="number"
@@ -95,7 +95,7 @@ export function LineItemsEditor({
             disabled={disabled}
             value={item.unitPrice}
             onChange={(e) => updateItem(i, { unitPrice: e.target.value })}
-            className="rounded-lg border-2 border-accent-light bg-white px-2.5 py-2 text-sm outline-none focus:border-accent disabled:opacity-50 sm:col-span-2"
+            className="rounded-lg border border-border bg-white px-2.5 py-2 text-sm outline-none focus:border-navy-700 disabled:opacity-50 sm:col-span-2"
           />
           <div className="flex items-center gap-1 sm:col-span-1">
             <input
@@ -105,9 +105,9 @@ export function LineItemsEditor({
               disabled={disabled}
               value={item.vatRate}
               onChange={(e) => updateItem(i, { vatRate: e.target.value })}
-              className="w-full rounded-lg border-2 border-accent-light bg-white px-2 py-2 text-sm outline-none focus:border-accent disabled:opacity-50"
+              className="w-full rounded-lg border border-border bg-white px-2 py-2 text-sm outline-none focus:border-navy-700 disabled:opacity-50"
             />
-            <span className="text-xs text-gray-400">%</span>
+            <span className="text-[13px] text-[#5d6c80]">%</span>
           </div>
           {items.length > 1 && !disabled && (
             <button
@@ -125,7 +125,7 @@ export function LineItemsEditor({
           <button
             type="button"
             onClick={() => onChange([...items, emptyItem()])}
-            className="rounded-full border-2 border-accent-light px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-accent"
+            className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-text-body hover:border-navy-700"
           >
             + Add item
           </button>
@@ -136,7 +136,7 @@ export function LineItemsEditor({
                 addFromCatalog(e.target.value);
                 e.target.value = "";
               }}
-              className="rounded-full border-2 border-accent-light bg-white px-3 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-accent"
+              className="rounded-full border border-border bg-white px-3 py-1.5 text-xs font-medium text-text-body outline-none focus:border-navy-700"
             >
               <option value="" disabled>
                 Add from Rebill catalogue…

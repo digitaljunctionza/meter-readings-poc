@@ -10,6 +10,8 @@ import { ReportDashboard } from "@/components/ReportDashboard";
 import { EmailReportButton } from "@/components/EmailReportButton";
 import { ComingSoon } from "@/components/ComingSoon";
 import { BottomNav } from "@/components/BottomNav";
+import { AdminPage } from "@/components/AdminPage";
+import { AdminReportDownload } from "@/components/AdminReportDownload";
 import type { Client, Property, Service } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -61,112 +63,112 @@ export default async function AdminReportsPage({
   const flaggedRows = readingRows.filter((r) => r.flag_status !== "ok");
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-5 overflow-x-hidden bg-white px-4 py-6 pb-32">
-      <div className="no-print flex min-w-0 items-center gap-3 rounded-2xl bg-navy-700 px-3 py-3">
-        <Link
-          href="/admin"
-          aria-label="Back to dashboard"
-          className="flex h-10 w-10 shrink-0 items-center justify-center text-white"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M15 18l-6-6 6-6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </Link>
-        <h1 className="min-w-0 flex-1 truncate text-sm font-bold text-white">Reports</h1>
+    <AdminPage width="wide">
+      <header className="no-print flex flex-col gap-3.5 border-b border-border bg-surface px-5 pb-4 pt-[calc(env(safe-area-inset-top)+20px)] lg:mx-4 lg:rounded-2xl lg:border lg:pt-5">
+        <div>
+          <h1 className="text-2xl font-extrabold text-navy-900">Reports</h1>
+          {activeClient && (
+            <p className="mt-1 text-sm text-[#5d6c80]">
+              {activeProperty?.name} · {activeClient.name}
+            </p>
+          )}
+        </div>
+        {properties.length > 1 && (
+          <nav aria-label="Property" className="flex gap-2 overflow-x-auto pb-1">
+            {properties.map((p) => (
+              <Link
+                key={p.id}
+                href={`/admin/reports?property=${p.id}`}
+                aria-current={p.id === activePropertyId ? "page" : undefined}
+                className={`min-h-11 shrink-0 whitespace-nowrap rounded-full border-[1.5px] px-4 py-2.5 text-sm ${
+                  p.id === activePropertyId
+                    ? "border-navy-700 bg-navy-700 font-bold text-white"
+                    : "border-border-strong bg-surface font-semibold text-navy-900 hover:border-navy-700"
+                }`}
+              >
+                {p.name}
+              </Link>
+            ))}
+          </nav>
+        )}
+      </header>
+
+      <h1 className="hidden text-lg font-bold text-navy-900 print:block">{activeProperty?.name} · meter readings</h1>
+
+      <div className="flex flex-col gap-5 px-4 py-5">
+        {properties.length === 0 ? (
+          <p className="rounded-2xl border border-border bg-surface px-4 py-4 text-[15px] text-text-body">
+            No properties yet.{" "}
+            <Link href="/admin/clients" className="font-semibold text-navy-700 underline">
+              Add a client and property
+            </Link>{" "}
+            to get started.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
+            <aside className="no-print flex flex-col gap-4 rounded-2xl border border-border bg-surface p-4">
+              <h2 className="text-base font-bold text-navy-900">Share this report</h2>
+              {activeProperty && (
+                <AdminReportDownload
+                  propertyId={activeProperty.id}
+                  propertyName={activeProperty.name}
+                  clientName={activeClient?.name ?? null}
+                  filters={{ from, to, unit, service }}
+                />
+              )}
+              {activeProperty && activeClient && (
+                <div className="border-t border-divider pt-4">
+                  {isEmailConfigured() ? (
+                    <EmailReportButton
+                      propertyId={activeProperty.id}
+                      clientName={activeClient.name}
+                      contactEmail={activeClient.contact_email}
+                      filters={{ from, to, unit, service }}
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-[13px] text-amber-900">
+                      <p className="font-bold">Email isn&apos;t connected</p>
+                      <p className="mt-1">
+                        Set <code className="font-mono text-xs">BREVO_API_KEY</code> to email reports from
+                        support@wmfixandfinish.co.za.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {flaggedRows.length > 0 && (
+                <Link
+                  href="/admin/review"
+                  className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-[13px] text-[#7a5410] hover:border-amber-600"
+                >
+                  <span className="min-w-0 flex-1">
+                    <strong className="block text-sm text-amber-900">
+                      {flaggedRows.length} reading{flaggedRows.length === 1 ? "" : "s"} flagged
+                    </strong>
+                    Check them in Review before sending.
+                  </span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+                    <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </Link>
+              )}
+              <ComingSoon label="Cost & tariffs" />
+            </aside>
+
+            <ReportDashboard rows={dashboardRows} />
+          </div>
+        )}
+
+        {activeProperty && (
+          <section className="flex flex-col gap-3">
+            <h2 className="no-print text-lg font-extrabold text-navy-900">Find readings</h2>
+            <ReportControls hasResults={rows.length > 0} />
+            <ReadingsTable rows={rows} />
+          </section>
+        )}
       </div>
 
-      <h1 className="hidden text-lg font-bold text-navy-900 print:block">
-        {activeProperty?.name} — meter readings
-      </h1>
-
-      {properties.length === 0 ? (
-        <p className="text-sm text-gray-500">
-          No properties yet.{" "}
-          <Link href="/admin/clients" className="text-accent underline">
-            Add a client and property
-          </Link>{" "}
-          to get started.
-        </p>
-      ) : (
-        <div className="no-print flex flex-wrap gap-2">
-          {properties.map((p) => (
-            <Link
-              key={p.id}
-              href={`/admin/reports?property=${p.id}`}
-              className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium ${
-                p.id === activePropertyId
-                  ? "border-green-500 bg-green-500 text-white"
-                  : "border-border text-gray-700 hover:border-green-500"
-              }`}
-            >
-              {p.name}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {activeClient && (
-        <p className="no-print text-sm text-gray-500">
-          Client: <span className="font-medium text-gray-700">{activeClient.name}</span>
-        </p>
-      )}
-
-      {activeProperty && activeClient && (
-        isEmailConfigured() ? (
-          <EmailReportButton
-            propertyId={activeProperty.id}
-            clientName={activeClient.name}
-            contactEmail={activeClient.contact_email}
-            filters={{ from, to, unit, service }}
-          />
-        ) : (
-          <div className="no-print rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-900">
-            <p className="font-semibold text-amber-900">Email isn&apos;t connected</p>
-            <p className="mt-1 text-amber-800">
-              Set <code className="font-mono text-xs">BREVO_API_KEY</code> in your environment to email reports
-              to clients directly from support@wmfixandfinish.co.za.
-            </p>
-          </div>
-        )
-      )}
-
-      <ReportControls hasResults={rows.length > 0} />
-
-      <ReadingsTable rows={rows} />
-
-      {flaggedRows.length > 0 && (
-        <div className="no-print flex items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0 text-amber-600" aria-hidden="true">
-            <path d="M12 8v5M12 16.5v.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-          </svg>
-          <p className="min-w-0 flex-1 text-sm text-amber-800">
-            <b className="text-amber-900">
-              {flaggedRows.length} reading{flaggedRows.length === 1 ? "" : "s"} need
-              {flaggedRows.length === 1 ? "s" : ""} a second look
-            </b>{" "}
-            — compared against each meter&apos;s own trailing average.
-          </p>
-          <Link
-            href="/admin/review"
-            className="shrink-0 rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-800"
-          >
-            Review
-          </Link>
-        </div>
-      )}
-
-      <ReportDashboard rows={dashboardRows} />
-
-      <div className="no-print"><ComingSoon label="Cost & tariffs" /></div>
-
       <BottomNav />
-    </main>
+    </AdminPage>
   );
 }

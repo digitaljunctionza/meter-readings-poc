@@ -149,88 +149,88 @@ export function RebillClientIdField({
           {mode === "manual" ? (
             <form onSubmit={handleManualSave} className="flex flex-col gap-3">
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-accent">Rebill client ID</span>
+                <span className="text-sm font-semibold text-navy-900">Rebill client ID</span>
                 <input
                   type="text"
                   autoFocus
                   value={manualValue}
                   onChange={(e) => setManualValue(e.target.value)}
                   placeholder="Pasted directly"
-                  className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 font-mono text-xs outline-none focus:border-accent"
+                  className="w-full rounded-lg border border-border bg-white px-3 py-2 font-mono text-xs outline-none focus:border-navy-700"
                 />
               </label>
-              {error && <p className="text-xs text-red-700">{error}</p>}
+              {error && <p className="text-sm font-medium text-red-600">{error}</p>}
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  className="min-h-12 rounded-xl bg-navy-700 px-5 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-50"
                 >
                   {isPending ? "Saving…" : "Save"}
                 </button>
-                <button type="button" onClick={() => setMode("search")} className="text-xs font-medium text-accent underline">
+                <button type="button" onClick={() => setMode("search")} className="text-xs font-medium text-navy-700 underline">
                   Search by name instead
                 </button>
               </div>
             </form>
           ) : mode === "create" ? (
             <form onSubmit={handleCreate} className="flex flex-col gap-3">
-              <p className="text-xs text-gray-500">
+              <p className="text-[13px] text-[#5d6c80]">
                 Adds this body corporate to Rebill and links them here in one step.
               </p>
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-accent">Business name</span>
+                <span className="text-sm font-semibold text-navy-900">Business name</span>
                 <input
                   type="text"
                   required
                   autoFocus
                   value={newClient.business_name}
                   onChange={(e) => setNewClient((s) => ({ ...s, business_name: e.target.value }))}
-                  className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                  className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
                 />
               </label>
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-accent">Email</span>
+                <span className="text-sm font-semibold text-navy-900">Email</span>
                 <input
                   type="email"
                   value={newClient.email}
                   onChange={(e) => setNewClient((s) => ({ ...s, email: e.target.value }))}
                   placeholder="Where quotes get sent"
-                  className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                  className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
                 />
               </label>
               <div className="flex gap-2">
                 <label className="flex flex-1 flex-col gap-1.5">
-                  <span className="text-xs font-bold text-accent">Phone</span>
+                  <span className="text-sm font-semibold text-navy-900">Phone</span>
                   <input
                     type="tel"
                     value={newClient.phone}
                     onChange={(e) => setNewClient((s) => ({ ...s, phone: e.target.value }))}
                     placeholder="+27821234567"
-                    className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                    className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
                   />
                 </label>
                 <label className="flex flex-1 flex-col gap-1.5">
-                  <span className="text-xs font-bold text-accent">VAT number</span>
+                  <span className="text-sm font-semibold text-navy-900">VAT number</span>
                   <input
                     type="text"
                     maxLength={64}
                     value={newClient.vat_number}
                     onChange={(e) => setNewClient((s) => ({ ...s, vat_number: e.target.value }))}
-                    className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                    className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
                   />
                 </label>
               </div>
-              {error && <p className="text-xs text-red-700">{error}</p>}
+              {error && <p className="text-sm font-medium text-red-600">{error}</p>}
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                  className="min-h-12 rounded-xl bg-navy-700 px-5 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-50"
                 >
                   {isPending ? "Creating…" : "Create in Rebill"}
                 </button>
-                <button type="button" onClick={() => setMode("search")} className="text-xs font-medium text-accent underline">
+                <button type="button" onClick={() => setMode("search")} className="text-xs font-medium text-navy-700 underline">
                   Search existing instead
                 </button>
               </div>
@@ -238,21 +238,21 @@ export function RebillClientIdField({
           ) : (
             <div className="flex flex-col gap-3">
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-accent">Search Rebill clients</span>
+                <span className="text-sm font-semibold text-navy-900">Search Rebill clients</span>
                 <input
                   type="text"
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Name or email…"
-                  className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                  className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
                 />
               </label>
 
-              {searching && <p className="text-xs text-gray-400">Searching…</p>}
+              {searching && <p className="text-[13px] text-[#5d6c80]">Searching…</p>}
 
               {!searching && query.trim() && results.length === 0 && (
-                <p className="text-xs text-gray-500">No matching Rebill clients found.</p>
+                <p className="text-[13px] text-[#5d6c80]">No matching Rebill clients found.</p>
               )}
 
               {results.length > 0 && (
@@ -263,26 +263,26 @@ export function RebillClientIdField({
                       type="button"
                       onClick={() => link(c.id)}
                       disabled={isPending}
-                      className="flex items-center justify-between gap-2 rounded-lg border-2 border-accent-light px-3 py-2 text-left text-xs hover:border-accent disabled:opacity-50"
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-left text-xs hover:border-navy-700 disabled:opacity-50"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold text-gray-800">
+                        <span className="block truncate font-semibold text-navy-900">
                           {c.business_name || `${c.name} ${c.surname ?? ""}`.trim()}
                         </span>
-                        <span className="block truncate text-gray-500">{c.email || "no email on file"}</span>
+                        <span className="block truncate text-[#5d6c80]">{c.email || "no email on file"}</span>
                       </span>
-                      <span className="shrink-0 rounded-full bg-accent px-2.5 py-1 font-semibold text-white">Link</span>
+                      <span className="shrink-0 rounded-full bg-navy-700 px-2.5 py-1 font-semibold text-white">Link</span>
                     </button>
                   ))}
                 </div>
               )}
 
-              {error && <p className="text-xs text-red-700">{error}</p>}
+              {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
               <button
                 type="button"
                 onClick={() => setMode("create")}
-                className="w-fit rounded-full border-2 border-accent-light px-3 py-1.5 text-xs font-semibold text-accent hover:border-accent"
+                className="w-fit rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-navy-700 hover:border-navy-700"
               >
                 + Not in Rebill yet — create them
               </button>
@@ -290,7 +290,7 @@ export function RebillClientIdField({
               <button
                 type="button"
                 onClick={() => setMode("manual")}
-                className="w-fit text-xs font-medium text-gray-500 underline"
+                className="w-fit text-xs font-medium text-[#5d6c80] underline"
               >
                 Paste a Rebill client ID directly instead
               </button>

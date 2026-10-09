@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
 import { ReviewQueueList, type ReviewItem } from "@/components/ReviewQueueList";
 import { trailingAverageUsage } from "@/lib/flagging";
 import { BottomNav } from "@/components/BottomNav";
+import { AdminPage } from "@/components/AdminPage";
 import type { Meter, MeterReading, Property, Unit } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -77,23 +77,18 @@ export default async function ReviewQueuePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-app-bg pb-24">
-      <div className="flex-none border-b border-border bg-surface px-5 pb-3.5 pt-[calc(env(safe-area-inset-top)+14px)]">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/more" aria-label="Back" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M15 5l-7 7 7 7" stroke="var(--navy-900)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
-          <div className="min-w-0 flex-1">
-            <p className="text-[17px] font-bold text-navy-900">Review queue</p>
-            <p className="text-[11px] text-text-muted">{items.length} open</p>
-          </div>
-        </div>
-      </div>
+    <AdminPage width="wide">
+      <header className="border-b border-border bg-surface px-5 pb-4 pt-[calc(env(safe-area-inset-top)+20px)] lg:mx-4 lg:rounded-2xl lg:border lg:pt-5">
+        <h1 className="text-2xl font-extrabold text-navy-900">Review</h1>
+        <p className="mt-1 text-sm text-[#5d6c80]">
+          {items.length === 0
+            ? "Nothing waiting"
+            : `${items.length} reading${items.length === 1 ? "" : "s"} need a decision. Each is compared with its own meter's history.`}
+        </p>
+      </header>
 
       <ReviewQueueList items={items} />
       <BottomNav />
-    </main>
+    </AdminPage>
   );
 }

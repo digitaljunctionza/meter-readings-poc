@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/auth";
 import { BottomNav } from "@/components/BottomNav";
-import type { FlagStatus, Meter, MeterReading, Property, Unit } from "@/lib/types";
+import { AdminPage } from "@/components/AdminPage";
+import type { FlagStatus, Meter, MeterReading, Property, Service, Unit } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +21,17 @@ interface MeterListRow extends Meter {
 
 export default async function CaptureRouteListPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ propertyId: string }>;
+  searchParams: Promise<{ service?: string }>;
 }) {
   const profile = await getProfile();
   if (!profile) redirect("/login?next=/capture");
   if (profile.role !== "admin") redirect("/client");
 
   const { propertyId } = await params;
+  const { service: serviceParam } = await searchParams;
   const supabase = await createClient();
 
   const { data: propertyRow } = await supabase
@@ -74,114 +78,88 @@ export default async function CaptureRouteListPage({
     })
     .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true }));
 
-  const readThisRound = rows.filter((r) => r.latest && r.latest.captured_at >= monthStart);
-  const readCount = readThisRound.length;
+  const isRead = (r: MeterListRow) => !!(r.latest && r.latest.captured_at >= monthStart);
+  const readCount = rows.filter(isRead).length;
   const total = rows.length;
+  const left = total - readCount;
   const pct = total > 0 ? Math.round((readCount / total) * 100) : 0;
 
-  const nextPending = rows.find((r) => !(r.latest && r.latest.captured_at >= monthStart));
+  const services = (["electricity", "water"] as const).filter((s) => rows.some((r) => r.service === s));
+  // Default to the first service that still has meters to read, so the
+  // list opens where the work is.
+  const requested = services.find((s) => s === serviceParam);
+  const firstWithWork = services.find((s) => rows.some((r) => r.service === s && !isRead(r)));
+  const activeService: Service = requested ?? firstWithWork ?? services[0] ?? "electricity";
+  const visible = rows.filter((r) => r.service === activeService);
+  const leftIn = (s: Service) => rows.filter((r) => r.service === s && !isRead(r)).length;
+
+  const nextPending = visible.find((r) => !isRead(r)) ?? rows.find((r) => !isRead(r));
 
   const FLAG_LABEL: Partial<Record<FlagStatus, string>> = {
-    below_prev: "Reading came in below last month",
-    above_2x_avg: "Well above the property average",
-    possible_partial: "Reading looks incomplete",
+    below_prev: "Lower than last month",
+    above_2x_avg: "Much higher than usual",
+    possible_partial: "Looks incomplete",
   };
 
-  return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-app-bg pb-32">
-      <div className="flex flex-col gap-4 bg-navy-700 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+14px)] text-white">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Link href="/capture" aria-label="Choose a different property" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/20">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-            <div className="min-w-0">
-              <p className="font-mono text-[10px] font-medium tracking-[0.08em] text-green-500">
-                {new Date().toLocaleDateString("en-ZA", { month: "long", year: "numeric" }).toUpperCase()}
-              </p>
-              <h1 className="truncate text-xl font-bold tracking-tight">{property.name}</h1>
-              <p className="text-xs text-white/55">
-                {property.address ? `${property.address} · ` : ""}
-                {total} meter{total === 1 ? "" : "s"}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.16]">
-            <div className="h-full rounded-full bg-green-500" style={{ width: `${pct}%` }} />
-          </div>
-          <span className="font-mono text-xs font-bold tabular-nums">
-            {readCount}/{total}
-          </span>
-        </div>
-      </div>
+  const nameFor = (r: MeterListRow) =>
+    r.unit_number ? `unit ${r.unit_number} ${r.service === "water" ? "water" : "electricity"}` : r.label;
 
-      <div className="flex flex-1 flex-col gap-3 px-4 py-4">
+  return (
+    <AdminPage>
+      <header className="flex flex-col gap-3.5 border-b border-border bg-surface px-4 pb-3.5 pt-[calc(env(safe-area-inset-top)+16px)] lg:mx-4 lg:rounded-2xl lg:border lg:pt-4">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/capture"
+            aria-label="Back to properties"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border hover:bg-app-bg"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke="var(--navy-900)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-xl font-extrabold text-navy-900">{property.name}</h1>
+            <p className="truncate text-[13px] text-[#5d6c80]">
+              {readCount} of {total} read{left > 0 ? ` · ${left} left` : " · all done"}
+            </p>
+          </div>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-divider">
+          <div className="h-full rounded-full bg-green-700" style={{ width: `${pct}%` }} />
+        </div>
+        {services.length > 1 && (
+          <nav aria-label="Service" className="grid grid-cols-2 gap-1 rounded-xl bg-divider p-1">
+            {services.map((s) => {
+              const active = s === activeService;
+              return (
+                <Link
+                  key={s}
+                  href={`/capture/${propertyId}?service=${s}`}
+                  replace
+                  aria-current={active ? "page" : undefined}
+                  className={`flex min-h-11 items-center justify-center rounded-[9px] text-sm ${
+                    active ? "bg-surface font-bold text-navy-900 shadow-[0_1px_3px_rgba(12,31,61,0.12)]" : "font-semibold text-[#5d6c80]"
+                  }`}
+                >
+                  {s === "water" ? "Water" : "Electricity"} · {leftIn(s) === 0 ? "done" : `${leftIn(s)} left`}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
+      </header>
+
+      <div className="flex flex-1 flex-col gap-2 px-4 py-4">
         {rows.length === 0 && (
-          <p className="rounded-xl border border-border bg-surface px-4 py-4 text-sm text-text-muted">
+          <p className="rounded-2xl border border-border bg-surface px-4 py-4 text-[15px] text-text-body">
             This property has no meters yet.{" "}
-            <Link href="/admin/clients" className="text-green-700 underline">
+            <Link href="/admin/clients" className="font-semibold text-navy-700 underline">
               Add one
             </Link>
             .
           </p>
         )}
-
-        {(["electricity", "water"] as const).map((service) => {
-          const group = rows.filter((r) => r.service === service);
-          if (group.length === 0) return null;
-          const groupRead = group.filter((r) => r.latest && r.latest.captured_at >= monthStart).length;
-
-          const groupPct = group.length > 0 ? Math.round((groupRead / group.length) * 100) : 0;
-
-          return (
-            <details key={service} className="group overflow-hidden rounded-xl border border-border bg-surface" open>
-              <summary className="flex cursor-pointer list-none items-center gap-2.5 px-3.5 py-3 marker:content-none [&::-webkit-details-marker]:hidden">
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="shrink-0 text-text-faint transition-transform group-open:rotate-90"
-                  aria-hidden="true"
-                >
-                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span
-                  className={`shrink-0 flex h-7 w-7 items-center justify-center rounded-full ${service === "water" ? "bg-blue-50 text-blue-500" : "bg-amber-50 text-amber-600"}`}
-                >
-                  {service === "water" ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M12 3s7 7.5 7 12a7 7 0 1 1-14 0c0-4.5 7-12 7-12Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M13 3 4 14h6l-1 7 9-11h-6l1-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" />
-                    </svg>
-                  )}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className={`block text-[13px] font-semibold capitalize ${service === "water" ? "text-blue-600" : "text-amber-700"}`}>
-                    {service}
-                  </span>
-                  <span className="block font-mono text-[10.5px] text-text-muted tabular-nums">
-                    {groupRead}/{group.length} read this round
-                  </span>
-                </span>
-                <span className="h-[5px] w-16 shrink-0 overflow-hidden rounded-full bg-divider">
-                  <span
-                    className={`block h-full rounded-full ${service === "water" ? "bg-blue-500" : "bg-amber-500"}`}
-                    style={{ width: `${groupPct}%` }}
-                  />
-                </span>
-              </summary>
-              <div className="flex flex-col gap-2 border-t border-border px-3 py-3">{group.map((r) => renderMeterRow(r))}</div>
-            </details>
-          );
-        })}
+        {visible.map((r) => renderMeterRow(r))}
       </div>
 
       <BottomNav
@@ -189,108 +167,91 @@ export default async function CaptureRouteListPage({
           nextPending && (
             <Link
               href={`/capture/${propertyId}/${nextPending.id}`}
-              className="flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-navy-700 text-[15px] font-semibold text-white"
+              className="flex min-h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-navy-700 px-4 text-base font-bold text-white hover:bg-navy-900"
             >
-              Next meter · {nextPending.unit_number ?? nextPending.label}
-              {nextPending.unit_number ? ` ${nextPending.service === "water" ? "Water" : "Electricity"}` : ""}
+              <span className="truncate">Read next: {nameFor(nextPending)}</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </Link>
           )
         }
       />
-    </main>
+    </AdminPage>
   );
 
   function renderMeterRow(r: MeterListRow) {
-          const isReadThisRound = !!(r.latest && r.latest.captured_at >= monthStart);
-          const flagged = isReadThisRound && r.latest!.flag_status !== "ok" && !r.latest!.reviewed_at;
-          const isNext = !isReadThisRound && r.id === nextPending?.id;
-          const usage =
-            r.latest && r.previous ? r.latest.reading_value - r.previous.reading_value : null;
+    const read = isRead(r);
+    const flagged = read && r.latest!.flag_status !== "ok" && !r.latest!.reviewed_at;
+    const isNext = !read && r.id === nextPending?.id;
+    const usage = r.latest && r.previous ? r.latest.reading_value - r.previous.reading_value : null;
+    const unitWord = r.service === "water" ? "kL" : "kWh";
 
-          const wrapClass = flagged
-            ? "bg-amber-50 border border-amber-200"
-            : isReadThisRound
-              ? "bg-green-50 border border-green-200"
-              : isNext
-                ? "bg-surface border border-border border-l-[3px] border-l-green-500"
-                : "bg-surface border border-border";
+    const box = flagged
+      ? "border-amber-200 bg-amber-50"
+      : read
+        ? "border-green-200 bg-surface"
+        : isNext
+          ? "border-2 border-navy-700 bg-surface"
+          : "border-border bg-surface";
 
-          return (
-            <div key={r.id} className={`flex items-center gap-1 rounded-xl px-1.5 py-1 ${wrapClass}`}>
-              <Link href={`/capture/${propertyId}/${r.id}`} className="flex min-w-0 flex-1 items-center gap-3 px-2 py-2">
-                {r.is_communal ? (
-                  <span
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-divider ${r.service === "water" ? "text-blue-500" : "text-navy-900"}`}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M5 4h11l3 3v13H5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M9 11h6M9 15h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                ) : (
-                  <span className="w-11 shrink-0 font-mono text-[17px] font-bold tabular-nums text-navy-900">
-                    {r.unit_number ?? "—"}
-                  </span>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className={`truncate text-[13px] font-semibold ${r.is_communal ? "" : "capitalize"} ${r.service === "water" ? "text-blue-500" : "text-navy-900"}`}>
-                    {r.is_communal ? r.label : r.service}
-                  </p>
-                  {flagged ? (
-                    <p className="truncate text-[11px] text-amber-800">
-                      {r.is_communal ? `${r.service} · ` : ""}
-                      {FLAG_LABEL[r.latest!.flag_status] ?? "Needs a second look"}
-                    </p>
-                  ) : isReadThisRound ? (
-                    <p className="truncate font-mono text-[11px] font-medium text-green-700 tabular-nums">
-                      {r.latest!.reading_value.toLocaleString("en-US")}
-                      {usage !== null ? ` · ${usage >= 0 ? "+" : ""}${usage.toLocaleString("en-US")}` : ""}
-                    </p>
-                  ) : (
-                    <p className="truncate text-[11px] text-text-muted">
-                      {r.is_communal ? `${r.service} · ` : ""}
-                      {r.location_note ?? "Not read yet this round"}
-                    </p>
-                  )}
-                </div>
-                {flagged ? (
-                  <span className="shrink-0 rounded-full border border-amber-200 px-2.5 py-1.5 font-sans text-[10px] font-semibold text-amber-800">
-                    Recheck
-                  </span>
-                ) : isReadThisRound ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="shrink-0 text-green-700" aria-hidden="true">
-                    <path d="M4 12.5l5 5L20 6.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                ) : (
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                      isNext ? "bg-green-500" : "border border-border"
-                    }`}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M9 6l6 6-6 6"
-                        stroke={isNext ? "#fff" : "var(--text-faint)"}
-                        strokeWidth="2.4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                )}
-              </Link>
-              <Link
-                href={`/capture/${propertyId}/${r.id}/replace`}
-                aria-label={`Replace ${r.service} meter for unit ${r.unit_number ?? r.label}`}
-                title="Record a meter replacement"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-faint hover:bg-divider hover:text-navy-900"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M17 2l4 4-4 4M21 6H8a5 5 0 0 0-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M7 22l-4-4 4-4M3 18h13a5 5 0 0 0 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
-            </div>
-          );
+    let sub: { text: string; cls: string };
+    if (flagged) {
+      sub = { text: FLAG_LABEL[r.latest!.flag_status] ?? "Needs a second look", cls: "text-[#7a5410]" };
+    } else if (read) {
+      const value = r.latest!.reading_value.toLocaleString("en-US");
+      const used = usage !== null ? ` · ${usage >= 0 ? "+" : ""}${usage.toLocaleString("en-US")} ${unitWord}` : "";
+      sub = { text: `${value}${used}`, cls: "font-mono text-[#2e6b1d]" };
+    } else if (isNext) {
+      sub = { text: r.location_note ?? "Next on your route", cls: "font-semibold text-navy-700" };
+    } else {
+      sub = { text: r.location_note ?? "Not read yet", cls: "text-[#5d6c80]" };
+    }
+
+    const badge = flagged
+      ? { text: "Recheck", cls: "bg-[#fbe8c6] text-[#7a5410]" }
+      : read
+        ? { text: "Done", cls: "bg-[#e6f2df] text-[#2e6b1d]" }
+        : isNext
+          ? { text: "Next", cls: "bg-navy-700 text-white" }
+          : null;
+
+    return (
+      <div key={r.id} className={`flex items-center rounded-2xl border ${box}`}>
+        <Link href={`/capture/${propertyId}/${r.id}`} className="flex min-w-0 flex-1 items-center gap-3.5 py-3 pl-3.5 pr-1.5">
+          <span className="w-12 shrink-0 truncate font-mono text-lg font-bold text-navy-900 tabular-nums">
+            {r.is_communal ? (
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-label="Communal meter">
+                <path d="M5 4h11l3 3v13H5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                <path d="M9 11h6M9 15h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            ) : (
+              (r.unit_number ?? "—")
+            )}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15px] font-semibold text-navy-900">
+              {r.is_communal ? r.label : r.service === "water" ? "Water" : "Electricity"}
+            </span>
+            <span className={`mt-0.5 block truncate text-[13px] tabular-nums ${sub.cls}`}>{sub.text}</span>
+          </span>
+          {badge && (
+            <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${badge.cls}`}>{badge.text}</span>
+          )}
+        </Link>
+        <Link
+          href={`/capture/${propertyId}/${r.id}/replace`}
+          aria-label={`Replace the meter for ${nameFor(r)}`}
+          title="Replace this meter"
+          className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#5d6c80] hover:bg-divider hover:text-navy-900"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="5.5" r="1.7" fill="currentColor" />
+            <circle cx="12" cy="12" r="1.7" fill="currentColor" />
+            <circle cx="12" cy="18.5" r="1.7" fill="currentColor" />
+          </svg>
+        </Link>
+      </div>
+    );
   }
 }

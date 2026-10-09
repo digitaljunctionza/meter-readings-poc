@@ -6,7 +6,7 @@ import type { Service } from "@/lib/types";
 import { DownloadIcon, SearchIcon, XIcon } from "@/components/icons";
 
 const inputClass =
-  "rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/20";
+  "rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-navy-700 focus:bg-white focus:ring-2 focus:ring-navy-700/20";
 
 export function ReportControls({ hasResults }: { hasResults: boolean }) {
   const router = useRouter();
@@ -110,7 +110,7 @@ export function ReportControls({ hasResults }: { hasResults: boolean }) {
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex items-center gap-1.5 rounded-full bg-navy-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-700/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 disabled:cursor-not-allowed disabled:opacity-70"
         >
           <SearchIcon className="h-4 w-4" />
           {isPending ? "Applying…" : "Apply filters"}
@@ -121,7 +121,7 @@ export function ReportControls({ hasResults }: { hasResults: boolean }) {
             type="button"
             onClick={handleClear}
             disabled={isPending}
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <XIcon className="h-4 w-4" />
             Clear
@@ -132,7 +132,7 @@ export function ReportControls({ hasResults }: { hasResults: boolean }) {
           <button
             type="button"
             onClick={() => window.print()}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-accent px-4 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-navy-700 px-4 py-2 text-sm font-semibold text-navy-700 transition-colors hover:bg-[#e8eef7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700"
           >
             <DownloadIcon className="h-4 w-4" />
             Download PDF

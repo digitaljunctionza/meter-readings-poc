@@ -44,10 +44,10 @@ function Photo({ url }: { url: string | null }) {
     <img
       src={url}
       alt="Meter photo"
-      className="max-h-[50vh] w-full rounded-xl border border-slate-200 bg-slate-50 object-contain"
+      className="max-h-[50vh] w-full rounded-xl border border-border bg-app-bg object-contain"
     />
   ) : (
-    <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-400">
+    <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-border text-sm text-[#5d6c80]">
       No photo attached
     </div>
   );
@@ -60,7 +60,7 @@ function PhotoLink({ url }: { url: string | null }) {
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="w-fit text-sm font-medium text-accent underline decoration-accent-light underline-offset-2 hover:decoration-accent"
+      className="w-fit text-sm font-medium text-navy-700 underline decoration-border-strong underline-offset-2 hover:decoration-navy-700"
     >
       Open full-size photo in a new tab
     </a>
@@ -82,30 +82,30 @@ function AdminDetail({ row, onClose }: { row: ReadingRow; onClose: () => void })
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <div>
-            <dt className="text-xs text-slate-500">Captured</dt>
-            <dd className="font-medium text-slate-900">{formatDateTime(row.captured_at)}</dd>
+            <dt className="text-xs text-[#5d6c80]">Captured</dt>
+            <dd className="font-medium text-navy-900">{formatDateTime(row.captured_at)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500">Reading</dt>
-            <dd className="font-mono font-semibold tabular-nums text-slate-900">
+            <dt className="text-xs text-[#5d6c80]">Reading</dt>
+            <dd className="font-mono font-semibold tabular-nums text-navy-900">
               {row.reading_value.toLocaleString("en-US")}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500">Previous</dt>
-            <dd className="font-mono tabular-nums text-slate-700">
+            <dt className="text-xs text-[#5d6c80]">Previous</dt>
+            <dd className="font-mono tabular-nums text-text-body">
               {row.previous_value !== null ? row.previous_value.toLocaleString("en-US") : "—"}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500">Usage</dt>
-            <dd className="font-mono tabular-nums text-slate-700">
+            <dt className="text-xs text-[#5d6c80]">Usage</dt>
+            <dd className="font-mono tabular-nums text-text-body">
               {row.usage !== null ? row.usage.toLocaleString("en-US") : "—"}
             </dd>
           </div>
         </dl>
 
-        {row.notes && <p className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">{row.notes}</p>}
+        {row.notes && <p className="rounded-lg bg-app-bg px-3 py-2 text-sm text-text-body">{row.notes}</p>}
 
         <PhotoLink url={row.photo_url} />
       </div>
@@ -140,12 +140,12 @@ function ClientDetail({
         <Photo url={row.photo_url} />
 
         <div>
-          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Meter reading</p>
+          <p className="text-xs font-semibold tracking-wide text-[#5d6c80] uppercase">Meter reading</p>
           <p className="mt-1 font-mono text-3xl font-bold tabular-nums text-navy-900">
             {formatNumber(row.reading_value)}{" "}
-            <span className="font-sans text-base font-semibold text-slate-500">{unit}</span>
+            <span className="font-sans text-base font-semibold text-[#5d6c80]">{unit}</span>
           </p>
-          <p className="mt-1 text-sm text-slate-600">{usageLine}</p>
+          <p className="mt-1 text-sm text-text-body">{usageLine}</p>
         </div>
 
         <span
@@ -155,17 +155,17 @@ function ClientDetail({
           {status.label}
         </span>
         {status.detail && (
-          <p className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm text-slate-700">{status.detail}</p>
+          <p className="rounded-xl bg-app-bg px-3 py-2.5 text-sm text-text-body">{status.detail}</p>
         )}
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <div>
-            <dt className="text-xs text-slate-500">Reading taken</dt>
-            <dd className="font-medium text-slate-900">{formatDayTime(row.captured_at)}</dd>
+            <dt className="text-xs text-[#5d6c80]">Reading taken</dt>
+            <dd className="font-medium text-navy-900">{formatDayTime(row.captured_at)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500">Previous reading</dt>
-            <dd className="font-mono tabular-nums text-slate-700">
+            <dt className="text-xs text-[#5d6c80]">Previous reading</dt>
+            <dd className="font-mono tabular-nums text-text-body">
               {row.previous_value !== null ? `${formatNumber(row.previous_value)} ${unit}` : "None yet"}
             </dd>
           </div>

@@ -15,7 +15,7 @@ const STATUS_LABEL: Record<AdminInvite["status"], string> = {
 const STATUS_CLASS: Record<AdminInvite["status"], string> = {
   pending: "border-amber-200 bg-amber-50 text-amber-800",
   used: "border-green-200 bg-green-50 text-green-700",
-  revoked: "border-gray-300 text-gray-500",
+  revoked: "border-border-strong text-[#5d6c80]",
 };
 
 export function AdminInviteManager({ invites }: { invites: AdminInvite[] }) {
@@ -55,7 +55,7 @@ export function AdminInviteManager({ invites }: { invites: AdminInvite[] }) {
       {open && (
         <Modal title="Invite an admin" onClose={() => setOpen(false)}>
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-gray-500">
+            <p className="text-[13px] text-[#5d6c80]">
               Generates a one-time link with full admin access — readings, clients, reports, everything.
               Only send it to someone you trust to run the business.
             </p>
@@ -70,26 +70,26 @@ export function AdminInviteManager({ invites }: { invites: AdminInvite[] }) {
             </button>
 
             {generatedLink && (
-              <div className="rounded-lg border-2 border-green-200 bg-green-50 px-3 py-2 text-sm">
+              <div className="rounded-xl border border-green-200 bg-green-50 px-3.5 py-3 text-sm">
                 <p className="font-medium text-green-800">Share this link with the new admin:</p>
-                <p className="mt-1 break-all font-mono text-accent">{generatedLink}</p>
+                <p className="mt-1 break-all font-mono text-navy-700">{generatedLink}</p>
               </div>
             )}
 
-            {error && <p className="text-sm text-red-700">{error}</p>}
+            {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
             {invites.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-accent">Existing invites</span>
+                <span className="text-sm font-semibold text-navy-900">Existing invites</span>
                 {invites.map((invite) => (
                   <div
                     key={invite.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border-2 border-accent-light px-3 py-2 text-xs"
+                    className="flex items-center justify-between gap-2 rounded-xl border border-border px-3.5 py-2.5 text-[13px]"
                   >
                     <span className={`rounded-full border-2 px-2 py-0.5 font-medium ${STATUS_CLASS[invite.status]}`}>
                       {STATUS_LABEL[invite.status]}
                     </span>
-                    <span className="flex-1 truncate text-gray-500">{formatDate(invite.created_at)}</span>
+                    <span className="flex-1 truncate text-[#5d6c80]">{formatDate(invite.created_at)}</span>
                     {invite.status === "pending" && (
                       <button
                         type="button"

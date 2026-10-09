@@ -48,7 +48,7 @@ export function EditPropertyButton({
         type="button"
         onClick={openEditor}
         aria-label="Edit property name and address"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#5d6c80] hover:bg-divider hover:text-navy-900"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
@@ -65,38 +65,38 @@ export function EditPropertyButton({
         <Modal title="Edit property" onClose={() => setOpen(false)}>
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-accent">Property name</span>
+              <span className="text-sm font-semibold text-navy-900">Property name</span>
               <input
                 type="text"
                 autoFocus
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-accent">Address (optional)</span>
+              <span className="text-sm font-semibold text-navy-900">Address (optional)</span>
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
               />
             </label>
-            {error && <p className="text-sm text-red-700">{error}</p>}
+            {error && <p className="text-sm font-medium text-red-600">{error}</p>}
             <div className="mt-1 flex gap-2">
               <button
                 type="submit"
                 disabled={isPending}
-                className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="min-h-12 rounded-xl bg-navy-700 px-5 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-50"
               >
                 {isPending ? "Saving…" : "Save"}
               </button>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full border-2 border-accent-light px-4 py-2 text-sm font-medium text-gray-600"
+                className="min-h-12 rounded-xl border-[1.5px] border-border-strong px-5 text-[15px] font-bold text-navy-700 hover:bg-app-bg"
               >
                 Cancel
               </button>

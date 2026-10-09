@@ -86,9 +86,9 @@ export function todaySA(): string {
 
 // -------------------------------------------------------------- services
 
-export const SERVICE_UNIT: Record<Service, string> = { electricity: "kWh", water: "kl" };
+export const SERVICE_UNIT: Record<Service, string> = { electricity: "kWh", water: "kL" };
 export const SERVICE_LABEL: Record<Service, string> = { electricity: "Electricity", water: "Water" };
-export const SERVICE_COLOR: Record<Service, string> = { electricity: "#d97706", water: "#2563eb" };
+export const SERVICE_COLOR: Record<Service, string> = { electricity: "#b45309", water: "#1f6bb8" };
 
 export function isService(value: string): value is Service {
   return value === "electricity" || value === "water";
