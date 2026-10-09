@@ -105,7 +105,7 @@ export function ClientDashboard({
                 key={p.id}
                 href={`${basePath}?property=${p.id}`}
                 aria-current={p.id === activePropertyId ? "page" : undefined}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 ${
                   p.id === activePropertyId
                     ? "border-green-500 bg-green-500 text-white shadow-sm"
                     : "border-slate-200 bg-white text-slate-600 hover:border-green-500 hover:text-green-700"

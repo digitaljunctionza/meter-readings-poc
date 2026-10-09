@@ -84,7 +84,7 @@ export default async function QuotesPage() {
       ) : null}
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-sm font-bold text-accent">New quote</h2>
+        <h2 className="text-sm font-bold text-navy-700">New quote</h2>
         <QuoteBuilderForm
           clients={clients
             .filter((c) => c.rebill_client_id)
@@ -95,22 +95,22 @@ export default async function QuotesPage() {
 
       {connected && !quotesError && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-bold text-accent">Quotes ({quotes.length})</h2>
+          <h2 className="text-sm font-bold text-navy-700">Quotes ({quotes.length})</h2>
           <QuoteList
             quotes={quotes}
             clientNameByRebillId={clientNameByRebillId}
             catalogItems={catalogItems}
           />
-          <p className="text-xs text-gray-500">Tap a quote to see its line items and edit them.</p>
+          <p className="text-xs text-[#5d6c80]">Tap a quote to see its line items and edit them.</p>
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
-        <span className="font-mono font-semibold text-gray-700">
+      <p className="text-xs text-[#5d6c80]">
+        <span className="font-mono font-semibold text-text-body">
           {linkedCount}/{clients.length}
         </span>{" "}
         client{clients.length === 1 ? "" : "s"} linked to Rebill. Manage links from{" "}
-        <Link href="/admin/clients" className="text-accent underline">
+        <Link href="/admin/clients" className="text-navy-700 underline">
           Clients &amp; meters
         </Link>
         .

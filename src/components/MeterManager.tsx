@@ -81,13 +81,13 @@ export function MeterManager({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold text-accent">
+        <span className="text-sm font-semibold text-navy-900">
           Meters ({meters.length})
         </span>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="rounded-full border-2 border-accent-light px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-accent"
+          className="min-h-11 rounded-xl border-[1.5px] border-border-strong px-3.5 text-sm font-bold text-navy-700 hover:bg-app-bg"
         >
           {open ? "Cancel" : "+ Add meter"}
         </button>
@@ -96,18 +96,20 @@ export function MeterManager({
       {open && (
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col gap-3 rounded-lg border-2 border-accent-light p-3"
+          className="flex flex-col gap-3 rounded-xl border border-border bg-app-bg p-3.5"
         >
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-accent">Service</span>
-            <div className="flex gap-2 rounded-lg border-2 border-accent-light p-1">
+            <span className="text-sm font-semibold text-navy-900">Service</span>
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-divider p-1">
               {(["electricity", "water"] as const).map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => setService(s)}
-                  className={`flex-1 rounded-md py-2 text-xs font-medium capitalize ${
-                    service === s ? "bg-accent text-white" : "text-gray-600"
+                  className={`min-h-11 rounded-[9px] text-sm capitalize ${
+                    service === s
+                      ? "bg-surface font-bold text-navy-900 shadow-[0_1px_3px_rgba(12,31,61,0.12)]"
+                      : "font-semibold text-[#5d6c80]"
                   }`}
                 >
                   {s}
@@ -121,29 +123,29 @@ export function MeterManager({
               type="checkbox"
               checked={isCommunal}
               onChange={(e) => setIsCommunal(e.target.checked)}
-              className="h-4 w-4"
+              className="h-5 w-5 accent-navy-700"
             />
-            <span className="text-xs font-medium text-gray-700">
+            <span className="text-sm font-medium text-text-body">
               Communal meter (not tied to a unit)
             </span>
           </label>
 
           {!isCommunal && (
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-accent">Unit number</span>
+              <span className="text-sm font-semibold text-navy-900">Unit number</span>
               <input
                 type="text"
                 value={unitNumber}
                 onChange={(e) => setUnitNumber(e.target.value)}
                 placeholder="e.g. 101"
-                className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+                className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
               />
             </label>
           )}
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-accent">
-              Label {!isCommunal && <span className="font-normal text-gray-400">(auto)</span>}
+            <span className="text-sm font-semibold text-navy-900">
+              Label {!isCommunal && <span className="font-normal text-[#5d6c80]">(auto)</span>}
             </span>
             <input
               type="text"
@@ -151,25 +153,25 @@ export function MeterManager({
               onChange={(e) => setLabel(e.target.value)}
               required={isCommunal}
               placeholder={isCommunal ? "e.g. Main Water Meter" : effectiveLabel || "e.g. 101 - Electricity"}
-              className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+              className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
             />
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-accent">Location note (optional)</span>
+            <span className="text-sm font-semibold text-navy-900">Location note (optional)</span>
             <input
               type="text"
               value={locationNote}
               onChange={(e) => setLocationNote(e.target.value)}
               placeholder="e.g. Basement meter room, left wall"
-              className="w-full rounded-lg border-2 border-accent-light bg-white px-3 py-2 text-sm outline-none focus:border-accent"
+              className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
             />
           </label>
 
           <button
             type="submit"
             disabled={isPending || !effectiveLabel}
-            className="w-fit rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="w-fit min-h-12 rounded-xl bg-navy-700 px-5 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-50"
           >
             {isPending ? "Adding..." : "Add meter"}
           </button>
@@ -177,7 +179,7 @@ export function MeterManager({
       )}
 
       {error && (
-        <p className="rounded-lg border-2 border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <p className="rounded-xl border border-red-600/30 bg-red-600/[0.06] px-3.5 py-2.5 text-sm font-medium text-red-600">
           {error}
         </p>
       )}
@@ -187,13 +189,13 @@ export function MeterManager({
           const group = meters.filter((m) => m.service === s);
           if (group.length === 0) return null;
           return (
-            <details key={s} className="group overflow-hidden rounded-xl border-2 border-accent-light" open={group.length <= 12}>
-              <summary className="flex cursor-pointer list-none items-center gap-2 bg-gray-50 px-3 py-2.5 [&::-webkit-details-marker]:hidden">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" className="shrink-0 text-gray-400 transition-transform group-open:rotate-90" aria-hidden="true">
+            <details key={s} className="group overflow-hidden rounded-xl border border-border" open={group.length <= 12}>
+              <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 bg-app-bg px-3.5 py-2.5 [&::-webkit-details-marker]:hidden">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" className="shrink-0 text-[#5d6c80] transition-transform group-open:rotate-90" aria-hidden="true">
                   <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span
-                  className={`text-[11.5px] font-bold capitalize ${s === "water" ? "text-blue-600" : "text-amber-600"}`}
+                  className={`text-sm font-bold capitalize ${s === "water" ? "text-blue-500" : "text-amber-800"}`}
                 >
                   {s} ({group.length})
                 </span>
@@ -202,20 +204,20 @@ export function MeterManager({
               {group.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-center gap-2 rounded-lg border-2 border-accent-light px-3 py-2 text-xs"
+                  className="flex min-h-11 items-center gap-2.5 rounded-xl border border-border px-3 py-2 text-[13px]"
                 >
                   <span
                     className={`shrink-0 rounded-full border-2 bg-white px-2 py-0.5 font-medium capitalize ${SERVICE_COLOR[m.service]}`}
                   >
                     {m.unit_number ?? m.service}
                   </span>
-                  <span className="min-w-0 flex-1 truncate font-medium text-gray-800">
+                  <span className="min-w-0 flex-1 truncate font-medium text-navy-900">
                     {m.label}
                     {m.is_communal && (
-                      <span className="ml-1.5 font-normal text-gray-400">communal</span>
+                      <span className="ml-1.5 font-normal text-[#5d6c80]">communal</span>
                     )}
                   </span>
-                  <span className="shrink-0 text-gray-500">
+                  <span className="shrink-0 text-[#5d6c80]">
                     {m.reading_count} reading{m.reading_count === 1 ? "" : "s"}
                   </span>
                   {m.reading_count === 0 && (
@@ -223,7 +225,7 @@ export function MeterManager({
                       type="button"
                       onClick={() => handleDelete(m.id)}
                       disabled={isPending}
-                      className="shrink-0 text-red-600 underline disabled:opacity-50"
+                      className="min-h-9 shrink-0 rounded-lg px-2 font-bold text-red-600 hover:bg-red-600/[0.06] disabled:opacity-50"
                     >
                       Delete
                     </button>

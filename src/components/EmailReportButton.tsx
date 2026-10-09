@@ -21,7 +21,7 @@ export function EmailReportButton({
 
   if (!contactEmail) {
     return (
-      <span className="text-xs text-gray-400">
+      <span className="text-[13px] text-[#5d6c80]">
         No contact email for {clientName} — add one under Clients &amp; meters to email reports.
       </span>
     );
@@ -52,7 +52,7 @@ export function EmailReportButton({
         type="button"
         onClick={handleClick}
         disabled={isPending}
-        className="inline-flex items-center gap-1.5 rounded-full border-2 border-accent px-4 py-2 text-sm font-semibold text-accent disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy-700 px-4 py-2 text-sm font-semibold text-navy-700 disabled:opacity-50"
       >
         {isPending ? "Sending…" : `Email report to ${clientName}`}
       </button>

@@ -70,7 +70,7 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
   if (loading) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-3 bg-white px-5 py-6">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-accent-light border-t-accent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-border border-t-navy-700" />
       </main>
     );
   }
@@ -89,17 +89,17 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center bg-white px-5 py-6">
       <div className="mb-6 text-center">
         <h1 className="text-xl font-bold text-navy-700">You&apos;ve been invited as an admin</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-text-body">
           Create an account to get full admin access — readings, clients, reports, everything.
         </p>
       </div>
 
-      <div className="mb-4 flex rounded-lg border-2 border-accent-light p-1">
+      <div className="mb-4 flex rounded-lg border border-border p-1">
         <button
           type="button"
           onClick={() => setMode("signup")}
           className={`flex-1 rounded-md py-2 text-sm font-medium ${
-            mode === "signup" ? "bg-navy-700 text-white" : "text-gray-600"
+            mode === "signup" ? "bg-navy-700 text-white" : "text-text-body"
           }`}
         >
           Sign up
@@ -108,7 +108,7 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
           type="button"
           onClick={() => setMode("signin")}
           className={`flex-1 rounded-md py-2 text-sm font-medium ${
-            mode === "signin" ? "bg-navy-700 text-white" : "text-gray-600"
+            mode === "signin" ? "bg-navy-700 text-white" : "text-text-body"
           }`}
         >
           Log in instead
@@ -121,7 +121,7 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
             <span className="text-sm font-bold text-navy-700">Full name</span>
             <input
               type="text"
-              className="w-full rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-navy-700"
+              className="w-full rounded-lg border border-border bg-white px-4 py-3 text-navy-900 outline-none focus:border-navy-700"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
@@ -133,7 +133,7 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
           <input
             type="email"
             required
-            className="w-full rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-navy-700"
+            className="w-full rounded-lg border border-border bg-white px-4 py-3 text-navy-900 outline-none focus:border-navy-700"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -145,7 +145,7 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
             type="password"
             required
             minLength={6}
-            className="w-full rounded-lg border-2 border-accent-light bg-white px-4 py-3 text-gray-900 outline-none focus:border-navy-700"
+            className="w-full rounded-lg border border-border bg-white px-4 py-3 text-navy-900 outline-none focus:border-navy-700"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

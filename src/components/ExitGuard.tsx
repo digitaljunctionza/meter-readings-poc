@@ -33,7 +33,7 @@ export function ExitGuard() {
   if (!showToast) return null;
 
   return (
-    <div className="no-print fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-gray-900/90 px-4 py-2 text-sm font-medium text-white">
+    <div className="no-print fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-full bg-navy-900/90 px-4 py-2 text-sm font-medium text-white">
       Tap back again to exit
     </div>
   );

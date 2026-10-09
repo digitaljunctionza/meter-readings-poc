@@ -28,13 +28,13 @@ export default async function ClientPage({
   if (properties.length === 0) {
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center gap-4 bg-slate-50 px-5 py-6 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-light text-accent">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#e8eef7] text-navy-700">
           <GaugeIcon className="h-7 w-7" />
         </div>
         <p className="text-sm text-slate-600">
           You don&apos;t have access to any properties yet. Ask Wayne to send you an invite link.
         </p>
-        <LogoutButton className="rounded-full border border-accent-light px-4 py-2.5 text-sm font-medium text-accent transition-colors hover:bg-accent-light focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" />
+        <LogoutButton className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-navy-700 transition-colors hover:bg-[#e8eef7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700" />
       </main>
     );
   }

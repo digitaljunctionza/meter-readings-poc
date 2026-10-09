@@ -60,7 +60,7 @@ function PhotoLink({ url }: { url: string | null }) {
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="w-fit text-sm font-medium text-accent underline decoration-accent-light underline-offset-2 hover:decoration-accent"
+      className="w-fit text-sm font-medium text-navy-700 underline decoration-border-strong underline-offset-2 hover:decoration-navy-700"
     >
       Open full-size photo in a new tab
     </a>

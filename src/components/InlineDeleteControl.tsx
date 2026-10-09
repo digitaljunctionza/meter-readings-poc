@@ -27,7 +27,7 @@ export function InlineDeleteControl({
   const [isPending, startTransition] = useTransition();
 
   if (blockedReason) {
-    return <span className="text-xs text-gray-400">{blockedReason}</span>;
+    return <span className="text-[13px] text-[#5d6c80]">{blockedReason}</span>;
   }
 
   function handleConfirm() {
@@ -48,12 +48,12 @@ export function InlineDeleteControl({
     <div className="flex flex-wrap items-center gap-2">
       {confirming ? (
         <>
-          <span className="text-xs text-red-700">Delete permanently?</span>
+          <span className="text-sm font-medium text-red-600">Delete permanently?</span>
           <button
             type="button"
             onClick={handleConfirm}
             disabled={isPending}
-            className="text-xs font-semibold text-red-600 underline disabled:opacity-50"
+            className="min-h-11 rounded-xl bg-red-600 px-4 text-sm font-bold text-white disabled:opacity-50"
           >
             {isPending ? "Deleting…" : "Yes, delete"}
           </button>
@@ -61,7 +61,7 @@ export function InlineDeleteControl({
             type="button"
             onClick={() => setConfirming(false)}
             disabled={isPending}
-            className="text-xs text-gray-500 underline disabled:opacity-50"
+            className="min-h-11 px-3 text-sm font-semibold text-[#5d6c80] hover:text-navy-900 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -70,12 +70,12 @@ export function InlineDeleteControl({
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="text-xs font-medium text-red-600 underline"
+          className="min-h-11 text-sm font-bold text-red-600 underline-offset-2 hover:underline"
         >
           {label}
         </button>
       )}
-      {error && <span className="text-xs text-red-700">{error}</span>}
+      {error && <span className="text-sm font-medium text-red-600">{error}</span>}
     </div>
   );
 }

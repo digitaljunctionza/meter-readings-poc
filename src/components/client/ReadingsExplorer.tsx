@@ -27,7 +27,7 @@ import type { Service } from "@/lib/types";
 const PAGE_SIZE = 25;
 
 const controlClass =
-  "rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20";
+  "rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-navy-700 focus:ring-2 focus:ring-navy-700/20";
 
 export function ReadingsExplorer({
   propertyName,
@@ -110,7 +110,7 @@ export function ReadingsExplorer({
           type="button"
           onClick={handleDownload}
           disabled={preparing || results.length === 0}
-          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-accent/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-navy-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-navy-700/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <DownloadIcon className="h-4 w-4" />
           {preparing ? "Preparing PDF…" : "Download PDF"}
@@ -211,7 +211,7 @@ export function ReadingsExplorer({
                 <button
                   type="button"
                   onClick={() => setOpenId(r.id)}
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:gap-4 sm:px-4"
+                  className="group flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-sm transition-colors hover:border-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700 sm:gap-4 sm:px-4"
                 >
                   <span
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"

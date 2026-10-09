@@ -81,7 +81,7 @@ export function SettingsForm({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
-              className="w-full rounded-lg border-2 border-border bg-white px-3 py-2.5 text-sm text-navy-900 outline-none focus:border-green-500"
+              className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
             />
           </label>
           <label className="flex flex-col gap-1.5">
@@ -97,7 +97,7 @@ export function SettingsForm({
             <button
               type="submit"
               disabled={nameSaving}
-              className="w-fit rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              className="w-fit min-h-12 rounded-xl bg-navy-700 px-5 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-50"
             >
               {nameSaving ? "Saving…" : "Save"}
             </button>
@@ -116,7 +116,7 @@ export function SettingsForm({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               minLength={6}
-              className="w-full rounded-lg border-2 border-border bg-white px-3 py-2.5 text-sm text-navy-900 outline-none focus:border-green-500"
+              className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
             />
           </label>
           <label className="flex flex-col gap-1.5">
@@ -126,14 +126,14 @@ export function SettingsForm({
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               minLength={6}
-              className="w-full rounded-lg border-2 border-border bg-white px-3 py-2.5 text-sm text-navy-900 outline-none focus:border-green-500"
+              className="min-h-12 w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 py-2.5 text-base text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
             />
           </label>
           <div className="flex items-center gap-3">
             <button
               type="submit"
               disabled={passwordSaving}
-              className="w-fit rounded-full bg-green-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              className="w-fit min-h-12 rounded-xl bg-navy-700 px-5 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-50"
             >
               {passwordSaving ? "Updating…" : "Update password"}
             </button>

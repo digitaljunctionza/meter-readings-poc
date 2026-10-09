@@ -86,9 +86,9 @@ export default async function AdminReportsPage({
       </h1>
 
       {properties.length === 0 ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-[#5d6c80]">
           No properties yet.{" "}
-          <Link href="/admin/clients" className="text-accent underline">
+          <Link href="/admin/clients" className="text-navy-700 underline">
             Add a client and property
           </Link>{" "}
           to get started.
@@ -102,7 +102,7 @@ export default async function AdminReportsPage({
               className={`rounded-full border-2 px-3 py-1.5 text-sm font-medium ${
                 p.id === activePropertyId
                   ? "border-green-500 bg-green-500 text-white"
-                  : "border-border text-gray-700 hover:border-green-500"
+                  : "border-border text-text-body hover:border-green-500"
               }`}
             >
               {p.name}
@@ -112,8 +112,8 @@ export default async function AdminReportsPage({
       )}
 
       {activeClient && (
-        <p className="no-print text-sm text-gray-500">
-          Client: <span className="font-medium text-gray-700">{activeClient.name}</span>
+        <p className="no-print text-sm text-[#5d6c80]">
+          Client: <span className="font-medium text-text-body">{activeClient.name}</span>
         </p>
       )}
 

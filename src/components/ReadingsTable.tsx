@@ -123,7 +123,7 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
                 <button
                   type="button"
                   onClick={() => handleSort("date")}
-                  className="no-print flex items-center gap-1 rounded transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  className="no-print flex items-center gap-1 rounded transition-colors hover:text-navy-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700"
                 >
                   Date
                   <SortIcon direction={sortKey === "date" ? sortDir : null} />
@@ -134,7 +134,7 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
                 <button
                   type="button"
                   onClick={() => handleSort("unit")}
-                  className="no-print flex items-center gap-1 rounded transition-colors hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  className="no-print flex items-center gap-1 rounded transition-colors hover:text-navy-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-700"
                 >
                   Unit
                   <SortIcon direction={sortKey === "unit" ? sortDir : null} />
@@ -188,7 +188,7 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
                     setOpenId(r.id);
                   }
                 }}
-                className="cursor-pointer outline-none transition-colors hover:bg-slate-50 focus-visible:bg-accent-light/60"
+                className="cursor-pointer outline-none transition-colors hover:bg-slate-50 focus-visible:bg-[#e8eef7]/60"
               >
                 <td className="px-3 py-2.5 whitespace-nowrap tabular-nums text-slate-700">
                   {formatDateTime(r.captured_at)}
@@ -217,7 +217,7 @@ export function ReadingsTable({ rows }: { rows: ReadingRow[] }) {
                 </td>
                 <td className="px-3 py-2.5">
                   {r.photo_url ? (
-                    <span className="font-medium text-accent">View</span>
+                    <span className="font-medium text-navy-700">View</span>
                   ) : (
                     <span className="text-slate-400">-</span>
                   )}

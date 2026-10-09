@@ -7,12 +7,12 @@ import { updateQuoteItemsAction, type QuoteFormLineItem } from "@/app/admin/quot
 import { isEditableQuoteStatus, type Quote, type RebillItem } from "@/lib/rebill/client";
 
 const STATUS_STYLE: Record<Quote["status"], string> = {
-  draft: "bg-gray-100 text-gray-600",
+  draft: "bg-divider text-text-body",
   sent: "bg-blue-50 text-blue-700",
   accepted: "bg-green-50 text-green-700",
   declined: "bg-red-50 text-red-700",
   expired: "bg-amber-50 text-amber-800",
-  converted: "bg-accent-light text-accent",
+  converted: "bg-[#e8eef7] text-navy-700",
 };
 
 function rand(cents: number): string {
@@ -78,7 +78,7 @@ export function QuoteList({
   }
 
   if (quotes.length === 0) {
-    return <p className="text-sm text-gray-500">No quotes yet.</p>;
+    return <p className="text-sm text-[#5d6c80]">No quotes yet.</p>;
   }
 
   return (
@@ -88,18 +88,18 @@ export function QuoteList({
         const isEditing = editingId === q.id;
         const editable = isEditableQuoteStatus(q.status);
         return (
-          <div key={q.id} className="rounded-lg border-2 border-accent-light text-sm">
+          <div key={q.id} className="rounded-lg border border-border text-sm">
             <button
               type="button"
               onClick={() => toggleExpand(q.id)}
               aria-expanded={isExpanded}
               className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left"
             >
-              <span className="font-mono text-xs font-semibold text-gray-800">{q.number}</span>
-              <span className="min-w-0 flex-1 truncate text-gray-700">
+              <span className="font-mono text-xs font-semibold text-navy-900">{q.number}</span>
+              <span className="min-w-0 flex-1 truncate text-text-body">
                 {clientNameByRebillId[q.client_id] ?? q.client_id}
               </span>
-              <span className="font-mono text-xs text-gray-600">
+              <span className="font-mono text-xs text-text-body">
                 {q.currency} {rand(q.amount)}
               </span>
               <span
@@ -113,14 +113,14 @@ export function QuoteList({
                 viewBox="0 0 24 24"
                 fill="none"
                 aria-hidden="true"
-                className={`shrink-0 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                className={`shrink-0 text-[#5d6c80] transition-transform ${isExpanded ? "rotate-180" : ""}`}
               >
                 <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
 
             {isExpanded && (
-              <div className="flex flex-col gap-3 border-t-2 border-accent-light px-3 py-3">
+              <div className="flex flex-col gap-3 border-t border-border px-3 py-3">
                 {isEditing ? (
                   <>
                     <LineItemsEditor
@@ -134,7 +134,7 @@ export function QuoteList({
                         type="button"
                         onClick={() => save(q.id)}
                         disabled={isPending}
-                        className="rounded-full bg-accent px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                        className="rounded-full bg-navy-700 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
                       >
                         {isPending ? "Saving…" : "Save line items"}
                       </button>
@@ -142,7 +142,7 @@ export function QuoteList({
                         type="button"
                         onClick={() => setEditingId(null)}
                         disabled={isPending}
-                        className="rounded-full border-2 border-accent-light px-4 py-2 text-xs font-medium text-gray-700 disabled:opacity-50"
+                        className="rounded-full border border-border px-4 py-2 text-xs font-medium text-text-body disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -151,20 +151,20 @@ export function QuoteList({
                 ) : (
                   <>
                     {q.items.length === 0 ? (
-                      <p className="text-xs text-gray-500">No line items on this quote.</p>
+                      <p className="text-[13px] text-[#5d6c80]">No line items on this quote.</p>
                     ) : (
                       <div className="flex flex-col gap-1">
                         {q.items.map((it, i) => (
                           <div key={i} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                            <span className="min-w-0 flex-1 truncate font-medium text-gray-800">{it.name}</span>
-                            <span className="font-mono text-xs text-gray-500">
+                            <span className="min-w-0 flex-1 truncate font-medium text-navy-900">{it.name}</span>
+                            <span className="font-mono text-xs text-[#5d6c80]">
                               {it.quantity} × {q.currency} {rand(it.unit_price)}
                             </span>
-                            <span className="w-20 text-right font-mono text-xs text-gray-700">
+                            <span className="w-20 text-right font-mono text-xs text-text-body">
                               {q.currency} {rand(it.quantity * it.unit_price)}
                             </span>
                             {it.description && (
-                              <span className="w-full text-xs text-gray-500">{it.description}</span>
+                              <span className="w-full text-xs text-[#5d6c80]">{it.description}</span>
                             )}
                           </div>
                         ))}
@@ -174,12 +174,12 @@ export function QuoteList({
                       <button
                         type="button"
                         onClick={() => startEdit(q)}
-                        className="w-fit rounded-full border-2 border-accent-light px-4 py-2 text-xs font-medium text-gray-700 hover:border-accent"
+                        className="w-fit rounded-full border border-border px-4 py-2 text-xs font-medium text-text-body hover:border-navy-700"
                       >
                         Edit line items
                       </button>
                     ) : (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-[13px] text-[#5d6c80]">
                         A {q.status} quote&apos;s line items can&apos;t be changed.
                       </p>
                     )}
