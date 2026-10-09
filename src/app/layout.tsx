@@ -19,8 +19,17 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  // Absolute base for the link-preview image (src/app/opengraph-image.png),
+  // so WhatsApp/email previews show our logo rather than a Vercel default.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://app.wmfixandfinish.co.za"),
   title: "Meter Readings",
   description: "Wayne's Fix & Finish meter readings",
+  openGraph: {
+    title: "Meter Readings · Wayne's Fix & Finish",
+    description: "Electricity and water meter readings for your property.",
+    siteName: "Meter Readings",
+    type: "website",
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
