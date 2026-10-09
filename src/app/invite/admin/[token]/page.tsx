@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { use as usePromise } from "react";
@@ -87,19 +88,20 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center bg-white px-5 py-6">
-      <div className="mb-6 text-center">
-        <h1 className="text-xl font-bold text-navy-700">You&apos;ve been invited as an admin</h1>
-        <p className="mt-1 text-sm text-text-body">
+      <div className="mb-6 flex flex-col items-center text-center">
+        <Image src="/icons/source-icon.png" alt="Wayne's Fix & Finish logo" width={72} height={72} className="rounded-[18px]" priority />
+        <h1 className="mt-4 text-[26px] font-extrabold text-navy-900">You&apos;ve been invited as an admin</h1>
+        <p className="mt-1.5 text-[15px] leading-relaxed text-text-body">
           Create an account to get full admin access — readings, clients, reports, everything.
         </p>
       </div>
 
-      <div className="mb-4 flex rounded-lg border border-border p-1">
+      <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-divider p-1">
         <button
           type="button"
           onClick={() => setMode("signup")}
-          className={`flex-1 rounded-md py-2 text-sm font-medium ${
-            mode === "signup" ? "bg-navy-700 text-white" : "text-text-body"
+          className={`min-h-11 rounded-[9px] text-sm ${
+            mode === "signup" ? "bg-surface font-bold text-navy-900 shadow-[0_1px_3px_rgba(12,31,61,0.12)]" : "font-semibold text-[#5d6c80]"
           }`}
         >
           Sign up
@@ -107,8 +109,8 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
         <button
           type="button"
           onClick={() => setMode("signin")}
-          className={`flex-1 rounded-md py-2 text-sm font-medium ${
-            mode === "signin" ? "bg-navy-700 text-white" : "text-text-body"
+          className={`min-h-11 rounded-[9px] text-sm ${
+            mode === "signin" ? "bg-surface font-bold text-navy-900 shadow-[0_1px_3px_rgba(12,31,61,0.12)]" : "font-semibold text-[#5d6c80]"
           }`}
         >
           Log in instead
@@ -118,10 +120,10 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {mode === "signup" && (
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-bold text-navy-700">Full name</span>
+            <span className="text-sm font-semibold text-navy-900">Full name</span>
             <input
               type="text"
-              className="w-full rounded-lg border border-border bg-white px-4 py-3 text-navy-900 outline-none focus:border-navy-700"
+              className="h-[52px] w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 text-base font-medium text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
@@ -129,23 +131,23 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
         )}
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-bold text-navy-700">Email</span>
+          <span className="text-sm font-semibold text-navy-900">Email</span>
           <input
             type="email"
             required
-            className="w-full rounded-lg border border-border bg-white px-4 py-3 text-navy-900 outline-none focus:border-navy-700"
+            className="h-[52px] w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 text-base font-medium text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-bold text-navy-700">Password</span>
+          <span className="text-sm font-semibold text-navy-900">Password</span>
           <input
             type="password"
             required
             minLength={6}
-            className="w-full rounded-lg border border-border bg-white px-4 py-3 text-navy-900 outline-none focus:border-navy-700"
+            className="h-[52px] w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 text-base font-medium text-navy-900 outline-none focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -154,14 +156,14 @@ export default function AdminInvitePage({ params }: { params: Promise<{ token: s
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 w-full rounded-full bg-navy-700 py-4 text-base font-semibold text-white disabled:opacity-50"
+          className="mt-1 min-h-[54px] w-full rounded-2xl bg-navy-700 text-base font-bold text-white hover:bg-navy-900 disabled:opacity-60"
         >
           {submitting ? "Please wait..." : mode === "signup" ? "Sign up" : "Log in"}
         </button>
       </form>
 
       {error && (
-        <p className="mt-4 rounded-lg border-2 border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p role="alert" className="mt-4 rounded-xl border border-red-600/30 bg-red-600/[0.06] px-4 py-3 text-sm font-medium text-red-600">
           {error}
         </p>
       )}
