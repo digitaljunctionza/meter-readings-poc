@@ -78,3 +78,44 @@ export async function emailPropertyReport(propertyId: string, filters?: ReportFi
 
   return { sentTo: client.contact_email };
 }
+
+export interface ReportSectionData {
+  propertyName: string;
+  clientName: string | null;
+  /** Readings matching the filters — the report's table. */
+  rows: Awaited<ReturnType<typeof buildReportRows>>;
+  /** Full history, for the month-by-month charts. */
+  chartRows: Awaited<ReturnType<typeof buildReportRows>>;
+}
+
+/**
+ * Everything the admin "Download report" needs for one property or for all
+ * of them. Admin-only: a client's own download runs in the browser from the
+ * readings already on their page, which RLS limits to their properties.
+ */
+export async function loadReportSections(
+  scope: string,
+  filters?: ReportFilters
+): Promise<ReportSectionData[]> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  const [{ data: propertyRows }, { data: clientRows }] = await Promise.all([
+    scope === "all"
+      ? supabase.from("properties").select("*").order("name")
+      : supabase.from("properties").select("*").eq("id", scope),
+    supabase.from("clients").select("*"),
+  ]);
+  const clientById = new Map(((clientRows ?? []) as Client[]).map((c) => [c.id, c]));
+  const properties = (propertyRows ?? []) as Property[];
+  if (properties.length === 0) throw new Error("Property not found");
+
+  const hasFilters = !!(filters && (filters.from || filters.to || filters.unitNumber || filters.service));
+  return Promise.all(
+    properties.map(async (p) => {
+      const chartRows = await buildReportRows(p.id);
+      const rows = hasFilters ? await buildReportRows(p.id, filters) : chartRows;
+      return { propertyName: p.name, clientName: clientById.get(p.client_id)?.name ?? null, rows, chartRows };
+    })
+  );
+}

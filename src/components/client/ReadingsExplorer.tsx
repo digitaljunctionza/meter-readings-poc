@@ -31,10 +31,13 @@ const controlClass =
 
 export function ReadingsExplorer({
   propertyName,
+  clientName,
   rows,
   openIds,
 }: {
   propertyName: string;
+  /** Who the downloaded report is prepared for; the property name if unknown. */
+  clientName?: string | null;
   rows: ReadingRow[];
   openIds: Set<string>;
 }) {
@@ -70,11 +73,11 @@ export function ReadingsExplorer({
       if (query.trim()) filterParts.push(`Unit "${query.trim()}"`);
       if (service !== "all") filterParts.push(SERVICE_LABEL[service]);
       await downloadReadingsPdf({
-        propertyName,
+        preparedFor: clientName || propertyName,
+        scopeLabel: propertyName,
         periodText: period_,
         filterText: filterParts.length > 0 ? filterParts.join(" · ") : null,
-        rows: results,
-        openIssueIds: openIds,
+        sections: [{ propertyName, rows: results, chartRows: rows, openIssueIds: openIds }],
       });
     } catch {
       setPdfError("We couldn't create the PDF. Please try again.");

@@ -47,17 +47,17 @@ export function EmailReportButton({
   }
 
   return (
-    <div className="no-print flex flex-wrap items-center gap-2">
+    <div className="no-print flex flex-col gap-1.5">
       <button
         type="button"
         onClick={handleClick}
         disabled={isPending}
-        className="inline-flex items-center gap-1.5 rounded-full border-2 border-navy-700 px-4 py-2 text-sm font-semibold text-navy-700 disabled:opacity-50"
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-navy-700 px-4 text-[15px] font-bold text-white hover:bg-navy-900 disabled:opacity-60"
       >
         {isPending ? "Sending…" : `Email report to ${clientName}`}
       </button>
       {result && (
-        <span className={`text-xs ${result.ok ? "text-green-700" : "text-red-700"}`}>{result.message}</span>
+        <span role="status" className={`text-sm font-medium ${result.ok ? "text-[#2e6b1d]" : "text-red-600"}`}>{result.message}</span>
       )}
     </div>
   );
