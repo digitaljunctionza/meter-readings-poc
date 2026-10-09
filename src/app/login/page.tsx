@@ -6,6 +6,9 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 
+const FIELD =
+  "h-[52px] w-full rounded-xl border-[1.5px] border-border-strong bg-white px-3.5 text-base font-medium text-navy-900 outline-none transition-colors placeholder:text-text-faint focus:border-navy-700 focus:ring-2 focus:ring-navy-700/15";
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -69,92 +72,87 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen w-full flex-col justify-between bg-navy-900 px-6 py-8">
-      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8">
-        <div className="flex flex-col gap-3">
-          <Image src="/icons/source-icon.png" alt="" width={64} height={64} className="rounded-2xl" priority />
-          <div className="flex gap-1.5 font-sans text-xs font-semibold tracking-[0.14em]">
-            <span className="text-white">WAYNE&apos;S</span>
-            <span className="text-green-500">FIX AND FINISH</span>
+    <main className="flex min-h-screen w-full flex-col bg-white lg:items-center lg:justify-center lg:bg-app-bg">
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-6 pb-8 pt-6 lg:flex-none lg:rounded-3xl lg:border lg:border-border lg:bg-white lg:px-10 lg:py-10 lg:shadow-sm">
+        <Link
+          href="/"
+          className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm font-semibold text-navy-700 hover:text-navy-900"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Back
+        </Link>
+
+        <div className="mt-6 flex flex-col items-center gap-3.5 text-center">
+          <Image src="/icons/source-icon.png" alt="Wayne's Fix & Finish logo" width={80} height={80} className="rounded-[20px]" priority />
+          <div>
+            <h1 className="text-[26px] font-extrabold text-navy-900">
+              {mode === "signin" ? "Meter Readings" : "Create an admin account"}
+            </h1>
+            <p className="mt-1.5 text-[15px] text-text-muted">Wayne&apos;s Fix &amp; Finish</p>
           </div>
-          <p className="-mt-1.5 text-sm text-white/50">Meter readings</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 rounded-xl border border-white/[0.16] bg-white/[0.07] px-4 py-3 focus-within:border-blue-500">
-            <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-white/45">
-              EMAIL
-            </span>
+        <form onSubmit={handleSubmit} className="mt-9 flex flex-col gap-4">
+          {mode === "signup" && (
+            <label className="flex flex-col gap-1.5 text-sm font-semibold text-navy-900">
+              Full name
+              <input type="text" className={FIELD} value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" />
+            </label>
+          )}
+
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-navy-900">
+            Email
             <input
               type="email"
               required
-              className="w-full bg-transparent text-[15px] font-medium text-white outline-none placeholder:text-white/30"
+              className={FIELD}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
             />
           </label>
 
-          {mode === "signup" && (
-            <label className="flex flex-col gap-1 rounded-xl border border-white/[0.16] bg-white/[0.07] px-4 py-3 focus-within:border-blue-500">
-              <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-white/45">
-                FULL NAME
-              </span>
-              <input
-                type="text"
-                className="w-full bg-transparent text-[15px] font-medium text-white outline-none placeholder:text-white/30"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </label>
-          )}
-
-          <label className="flex flex-col gap-1 rounded-xl border border-white/[0.16] bg-white/[0.07] px-4 py-3 focus-within:border-blue-500">
-            <span className="font-mono text-[10px] font-medium tracking-[0.08em] text-white/45">
-              PASSWORD
-            </span>
+          <label className="flex flex-col gap-1.5 text-sm font-semibold text-navy-900">
+            Password
             <input
               type="password"
               required
               minLength={6}
-              className="w-full bg-transparent text-[15px] font-medium text-white outline-none placeholder:text-white/30"
+              className={FIELD}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              autoComplete={mode === "signin" ? "current-password" : "new-password"}
             />
           </label>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-2 min-h-[52px] w-full rounded-xl bg-green-500 py-4 text-[15px] font-bold text-white transition-opacity disabled:opacity-50"
-          >
-            {submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Sign up"}
-          </button>
-
           {error && (
-            <p className="rounded-lg border border-red-600/40 bg-red-600/10 px-4 py-3 text-sm text-[#F0A6A0]">
+            <p role="alert" className="rounded-xl border border-red-600/30 bg-red-600/[0.06] px-4 py-3 text-sm font-medium text-red-600">
               {error}
             </p>
           )}
 
           <button
+            type="submit"
+            disabled={submitting}
+            className="mt-1 min-h-[54px] w-full rounded-2xl bg-navy-700 text-base font-bold text-white transition-colors hover:bg-navy-900 disabled:opacity-60"
+          >
+            {submitting ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
+          </button>
+
+          <button
             type="button"
             onClick={() => setMode((m) => (m === "signin" ? "signup" : "signin"))}
-            className="mt-1 min-h-[44px] text-center text-xs font-medium text-white/45 underline-offset-2 hover:underline"
+            className="min-h-11 text-center text-sm font-medium text-text-muted underline-offset-2 hover:text-navy-900 hover:underline"
           >
-            {mode === "signin" ? "Need an admin account? Sign up" : "Already have an account? Log in"}
+            {mode === "signin" ? "Need an admin account? Sign up" : "Already have an account? Sign in"}
           </button>
         </form>
-      </div>
 
-      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 pt-6">
-        <p className="text-center text-[11px] leading-relaxed text-white/35">
-          Clients: use the link in your invite email to set a password the first time.
-        </p>
-        <Link href="/" className="text-center text-xs text-white/45 underline-offset-2 hover:underline">
-          Back to home
-        </Link>
+        <div className="mt-auto rounded-2xl bg-app-bg px-4 py-3.5 text-sm leading-relaxed text-text-body lg:mt-8">
+          <strong className="text-navy-900">First time here?</strong> Open the invite link in your email to set your password.
+        </div>
       </div>
     </main>
   );
