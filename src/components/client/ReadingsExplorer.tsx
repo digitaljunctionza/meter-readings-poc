@@ -49,6 +49,9 @@ export function ReadingsExplorer({
   const [openId, setOpenId] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  // The list stays hidden until the client asks for something — a full
+  // property's readings is a long scroll that buries what they came for.
+  const [showList, setShowList] = useState(false);
 
   const latestKey = useMemo(() => latestMonthKey(rows), [rows]);
   const results = useMemo(
@@ -63,6 +66,7 @@ export function ReadingsExplorer({
   function change(update: () => void) {
     update();
     setVisible(PAGE_SIZE);
+    setShowList(true);
   }
 
   async function handleDownload() {
@@ -180,7 +184,21 @@ export function ReadingsExplorer({
         </div>
       </div>
 
-      {results.length === 0 ? (
+      {!showList ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-border px-4 py-10 text-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-divider text-[#5d6c80]">
+            <SearchIcon className="h-5 w-5" />
+          </span>
+          <p className="max-w-sm text-[15px] text-text-body">Use the filters above to find specific readings.</p>
+          <button
+            type="button"
+            onClick={() => setShowList(true)}
+            className="min-h-11 rounded-xl border-[1.5px] border-border-strong bg-surface px-4 text-sm font-bold text-navy-700 hover:bg-app-bg"
+          >
+            Show all {formatNumber(results.length)} reading{results.length === 1 ? "" : "s"} for {period_}
+          </button>
+        </div>
+      ) : results.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-border bg-white px-4 py-10 text-center">
           <p className="max-w-sm text-sm text-[#5d6c80]">
             No readings match{hasFilters ? " those filters" : " this period"}. Try a different unit, service or period.
